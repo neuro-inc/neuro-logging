@@ -1,0 +1,13 @@
+version: 1
+disable_existing_loggers: true
+
+
+handlers:
+  stderr:
+    class: logging.StreamHandler
+    level: NOTSET
+
+root:
+  level: NOTSET
+  handlers:
+    - stderr

@@ -1,0 +1,18 @@
+# Distribution
+*.egg-info
+/client/dist
+.eggs
+# Coverage
+.coverage*
+
+# QA tools
+.mypy_cache
+.pytest_cache
+
+# VirtualEnv
+.env
+.venv
+venv
+
+# Other
+__pycache__

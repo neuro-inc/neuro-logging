@@ -1,0 +1,32 @@
+version: 1
+disable_existing_loggers: true
+
+formatters:
+  standard:
+    format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+filters:
+  hide_errors:
+    (): platform_logging.HideLessThanFilter
+    level: ERROR
+
+handlers:
+  stdout:
+    class: logging.StreamHandler
+    level: DEBUG
+    formatter: standard
+    stream: ext://sys.stdout
+    filters:
+      - hide_errors
+
+  stderr:
+    class: logging.StreamHandler
+    level: ERROR
+    formatter: standard
+    stream: ext://sys.stderr
+
+root:
+  level: NOTSET
+  handlers:
+    - stderr
+    - stdout
