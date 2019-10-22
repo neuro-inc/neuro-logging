@@ -53,6 +53,33 @@ jobs:
           file: .coverage.xml
           flags: client
 
+  devpi_deploy:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+          - &cache_key_devpi v1-dependencies-python_3.6.6-devpi
+      - run:
+          name: Setup venv
+          command: |
+            python3 -m venv venv
+      - run:
+          name: devpi setup
+          command: |
+            . venv/bin/activate
+            make -C client -s devpi_setup
+      - run:
+          name: devpi upload
+          command: |
+            . venv/bin/activate
+            make -C client devpi_upload
+      - save_cache:
+          paths:
+            - venv
+          key: *cache_key_devpi
+
+
 
 workflows:
   version: 2
@@ -61,3 +88,22 @@ workflows:
     jobs:
       - test:
           context: org-dev
+
+  devpi:
+    jobs:
+      - test:
+          context: org-dev
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+      - devpi_deploy:
+          context: org-dev
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+          requires:
+            - test
