@@ -51,7 +51,6 @@ jobs:
             make test
       - codecov/upload:
           file: .coverage.xml
-          flags: client
 
   devpi_deploy:
     <<: *defaults
