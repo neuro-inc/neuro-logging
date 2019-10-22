@@ -1,0 +1,63 @@
+version: 2.1
+
+executors:
+    python:
+      docker:
+        - image: circleci/python:3.6.6-stretch
+
+defaults: &defaults
+  executor: python
+  working_directory: ~/platform-notifications
+
+cache: &cache
+  keys:
+    - &cache_key  v1-dependencies-python_3.6.6-{{ checksum "requirements-test.txt" }}-{{ checksum "etup.py" }}
+
+
+orbs:
+  codecov: codecov/codecov@1.0.4
+
+jobs:
+
+  test:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - restore_cache:
+          <<: *cache
+      - run:
+          name: Install dependencies
+          command: |
+            python3 -m venv .venv
+            . .venv/bin/activate
+            pip install --upgrade pip
+            make setup
+            pip3 install codecov==2.0.15
+      - save_cache:
+          paths:
+            - .venv
+          key: *cache_key
+
+      - run:
+          name: Running Static Code Analysis
+          command: |
+            . .venv/bin/activate
+            make lint
+      - run:
+          name: Running Unit Tests
+          command: |
+            . .venv/bin/activate
+            make test
+      - codecov/upload:
+          file: client/.coverage.xml
+          flags: client
+
+
+workflows:
+  version: 2
+
+  main:
+    jobs:
+      - test:
+          context: org-dev
