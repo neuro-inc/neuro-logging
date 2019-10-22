@@ -58,7 +58,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-          - &cache_key_devpi v1-dependencies-python_3.6.6-devpi
+          - &cache_key_devpi v1-dependencies-python_3.6.6-devpi-{{ checksum "setup.py" }}
       - run:
           name: Setup venv
           command: |
@@ -67,12 +67,12 @@ jobs:
           name: devpi setup
           command: |
             . venv/bin/activate
-            make -C client -s devpi_setup
+            make -s devpi_setup
       - run:
           name: devpi upload
           command: |
             . venv/bin/activate
-            make -C client devpi_upload
+            make devpi_upload
       - save_cache:
           paths:
             - venv
