@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 
-install_requires = ["PyYAML==5.1.2"]
+install_requires = ["pyyaml>=3.0"]
 
 setup(
     name="platform-logging",
