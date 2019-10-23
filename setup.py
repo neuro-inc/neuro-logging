@@ -11,4 +11,6 @@ setup(
     packages=find_packages(),
     setup_requires=["setuptools_scm"],
     use_scm_version=True,
+    package_data={"default": ["platform_logging/config.yaml"]},
+    include_package_data=True,
 )
