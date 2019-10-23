@@ -11,7 +11,7 @@ executors:
 orbs:
   codecov: codecov/codecov@1.0.4
 
-build:
+test:
   steps:
     - &install_dependencies_step
       run:
@@ -58,9 +58,7 @@ defaults: &defaults
   working_directory: ~/platform-notifications
 
 
-
 jobs:
-
   test-py36:
     <<: *defaults
     executor: python-36
@@ -116,10 +114,8 @@ jobs:
           key: *cache_key_devpi
 
 
-
 workflows:
   version: 2
-
   main:
     jobs:
       - test-py36:
