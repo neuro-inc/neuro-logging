@@ -38,15 +38,22 @@ build:
     - &restore_cache-py36
       restore_cache:
         keys:
-          - v1-dependencies-python_3.6.6-{{ checksum "requirements-test.txt" }}-{{ checksum "setup.py" }}
+          - &cache_key-py36 v1-dependencies-python_3.6.6-{{ checksum "requirements-test.txt" }}-{{ checksum "setup.py" }}
     - &restore_cache-py37
       restore_cache:
         keys:
-          - v1-dependencies-python_3.7.5-{{ checksum "requirements-test.txt" }}-{{ checksum "setup.py" }}
-    - &save_cache
+          - &cache_key-py37  v1-dependencies-python_3.7.5-{{ checksum "requirements-test.txt" }}-{{ checksum "setup.py" }}
+    - &save_cache-py36
         save_cache:
+          key: *cache_key-py36
           paths:
             - .venv
+    - &save_cache-py37
+      save_cache:
+        key: *cache_key-py37
+        paths:
+          - .venv
+          -
 defaults: &defaults
   working_directory: ~/platform-notifications
 
@@ -61,7 +68,7 @@ jobs:
       - checkout
       - *restore_cache-py36
       - *install_dependencies_step
-      - *save_cache
+      - *save_cache-py36
       - *lint_step
       - *unit_step
       - codecov/upload:
@@ -74,7 +81,7 @@ jobs:
       - checkout
       - *restore_cache-py37
       - *install_dependencies_step
-      - *save_cache
+      - *save_cache-py37
       - *lint_step
       - *unit_step
       - codecov/upload:
