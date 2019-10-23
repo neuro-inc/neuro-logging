@@ -1,59 +1,89 @@
 version: 2.1
 
 executors:
-    python:
+    python-3.6:
       docker:
         - image: circleci/python:3.6.6-stretch
-
-defaults: &defaults
-  executor: python
-  working_directory: ~/platform-notifications
-
-cache: &cache
-  keys:
-    - &cache_key  v1-dependencies-python_3.6.6-{{ checksum "requirements-test.txt" }}-{{ checksum "setup.py" }}
-
+    python-3.7:
+      docker:
+        - image: circleci/python:3.7.5-buster
 
 orbs:
   codecov: codecov/codecov@1.0.4
 
-jobs:
+build:
+  steps:
+    - &install_dependencies_step
+      run:
+        name: Install dependencies
+        command: |
+          python3 -m venv .venv
+          . .venv/bin/activate
+          pip install --upgrade pip
+          make setup
+          pip3 install codecov==2.0.15
 
-  test:
-    <<: *defaults
-    steps:
-      - checkout
-
-      - restore_cache:
-          <<: *cache
-      - run:
-          name: Install dependencies
-          command: |
-            python3 -m venv .venv
-            . .venv/bin/activate
-            pip install --upgrade pip
-            make setup
-            pip3 install codecov==2.0.15
-      - save_cache:
+    - &lint_step
+      run:
+        name: Running Static Code Analysis
+        command: |
+          . .venv/bin/activate
+          make lint
+    - &unit_step
+      run:
+        name: Running Unit Tests
+        command: |
+          . .venv/bin/activate
+          make test
+    - &restore_cache-py36
+      restore_cache:
+        keys:
+          - v1-dependencies-python_3.6.6-{{ checksum "requirements-test.txt" }}-{{ checksum "setup.py" }}
+    - &restore_cache-py37
+      restore_cache:
+        keys:
+          - v1-dependencies-python_3.7.5-{{ checksum "requirements-test.txt" }}-{{ checksum "setup.py" }}
+    - &save_cache
+        save_cache:
           paths:
             - .venv
-          key: *cache_key
+defaults: &defaults
+  working_directory: ~/platform-notifications
 
-      - run:
-          name: Running Static Code Analysis
-          command: |
-            . .venv/bin/activate
-            make lint
-      - run:
-          name: Running Unit Tests
-          command: |
-            . .venv/bin/activate
-            make test
+
+
+jobs:
+
+  test-py36:
+    <<: *defaults
+    executor: python-3.6
+    steps:
+      - checkout
+      - *restore_cache-py36
+      - *install_dependencies_step
+      - *save_cache
+      - *lint_step
+      - *unit_step
       - codecov/upload:
           file: .coverage.xml
+          flags: py36
+  test-py37:
+    <<: *defaults
+    executor: python-3.7
+    steps:
+      - checkout
+      - *restore_cache-py37
+      - *install_dependencies_step
+      - *save_cache
+      - *lint_step
+      - *unit_step
+      - codecov/upload:
+          file: .coverage.xml
+          flags: py37
 
   devpi_deploy:
     <<: *defaults
+    executor: python-3.7
     steps:
       - checkout
       - restore_cache:
@@ -85,12 +115,20 @@ workflows:
 
   main:
     jobs:
-      - test:
+      - test-py36:
           context: org-dev
-
+      - test-py37:
+          context: org-dev
   devpi:
     jobs:
-      - test:
+      - test-py36:
+          context: org-dev
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+      - test-py37:
           context: org-dev
           filters:
             tags:
@@ -105,4 +143,5 @@ workflows:
             branches:
               ignore: /.*/
           requires:
-            - test
+            - test-py36
+            - test-py37
