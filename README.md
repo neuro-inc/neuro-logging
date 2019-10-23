@@ -10,4 +10,4 @@ Usage:
 ```
 
 By default `init_logging()` will forward all `errors` and `critical` messages to `stderr`. All other type of messages will be forwarded to `stdout`.
-You can pass path to yaml config with custom setting.
+You can pass own dict-based config with custom setting.

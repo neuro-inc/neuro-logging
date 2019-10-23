@@ -1,9 +1,6 @@
 import logging
 import logging.config
-from pathlib import Path
-from typing import Union
-
-import yaml
+from typing import Any, Dict, Union
 
 from .version import VERSION
 
@@ -11,14 +8,6 @@ from .version import VERSION
 __version__ = VERSION
 
 __all__ = ["init_logging", "HideLessThanFilter"]
-
-DEFAULT_CONFIG_FILE = Path(__file__).parent / "config.yaml"
-
-
-def init_logging(config_file_name: Union[str, Path] = DEFAULT_CONFIG_FILE) -> None:
-    with open(config_file_name, "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
-        logging.config.dictConfig(config)
 
 
 class HideLessThanFilter(logging.Filter):
@@ -33,3 +22,35 @@ class HideLessThanFilter(logging.Filter):
 
     def filter(self, record: logging.LogRecord) -> bool:
         return record.levelno < self.level
+
+
+DEFAULT_CONFIG = {
+    "version": 1,
+    "disable_existing_loggers": True,
+    "formatters": {
+        "standard": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"}
+    },
+    "filters": {
+        "hide_errors": {"()": "platform_logging.HideLessThanFilter", "level": "ERROR"}
+    },
+    "handlers": {
+        "stdout": {
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
+            "formatter": "standard",
+            "stream": "ext://sys.stdout",
+            "filters": ["hide_errors"],
+        },
+        "stderr": {
+            "class": "logging.StreamHandler",
+            "level": "ERROR",
+            "formatter": "standard",
+            "stream": "ext://sys.stderr",
+        },
+    },
+    "root": {"level": logging.NOTSET, "handlers": ["stderr", "stdout"]},
+}
+
+
+def init_logging(config: Dict[str, Any] = DEFAULT_CONFIG) -> None:
+    logging.config.dictConfig(config)

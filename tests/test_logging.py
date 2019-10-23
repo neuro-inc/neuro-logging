@@ -1,6 +1,5 @@
 import logging
 import re
-from pathlib import Path
 from typing import Any
 
 import pytest
@@ -38,8 +37,15 @@ def test_default_config_output(capsys: Any) -> None:
 
 
 def test_custom_config(capsys: Any) -> None:
-    config_file_name = Path(__file__).parent / "assets/simple-config.yaml"
-    init_logging(config_file_name)
+    custom_config = {
+        "version": 1,
+        "disable_existing_loggers": True,
+        "handlers": {
+            "stderr": {"class": "logging.StreamHandler", "level": logging.NOTSET}
+        },
+        "root": {"level": logging.NOTSET, "handlers": ["stderr"]},
+    }
+    init_logging(custom_config)
     _log_all_messages()
     captured = capsys.readouterr()
     assert "DebugMessage" in captured.err
