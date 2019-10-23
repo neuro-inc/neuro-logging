@@ -83,7 +83,7 @@ jobs:
 
   devpi_deploy:
     <<: *defaults
-    executor: python-3.7
+    executor: python-37
     steps:
       - checkout
       - restore_cache:
