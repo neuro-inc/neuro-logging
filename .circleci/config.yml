@@ -53,7 +53,7 @@ build:
         key: *cache_key-py37
         paths:
           - .venv
-          -
+
 defaults: &defaults
   working_directory: ~/platform-notifications
 
