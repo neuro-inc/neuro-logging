@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from platform_logging import HideLessThanFilter, init_logging
+from platform_logging import DEFAULT_CONFIG, HideLessThanFilter, init_logging
 
 
 def _log_all_messages() -> None:
@@ -71,3 +71,29 @@ def test_hide_less_filter_text_level_names() -> None:
 
     with pytest.raises(ValueError):
         HideLessThanFilter("unknown-level")
+
+
+def test_existing_loggers_continue_work(capsys: Any) -> None:
+    existing = logging.getLogger("existing")
+    init_logging()
+
+    existing.info("InfoMessage")
+    existing.error("ErrorMessage")
+    captured = capsys.readouterr()
+    assert "InfoMessage" in captured.out
+    assert "ErrorMessage" in captured.err
+
+
+def test_rewrite_existing_logging(capsys: Any) -> None:
+    existing = logging.getLogger("existing")
+
+    config = dict(DEFAULT_CONFIG)
+    config.update({"loggers": {"existing": {"level": "ERROR"}}})
+    init_logging(config)
+
+    existing.info("InfoMessage")
+    existing.error("ErrorMessage")
+    captured = capsys.readouterr()
+    assert "InfoMessage" not in captured.out
+    assert "InfoMessage" not in captured.err
+    assert "ErrorMessage" in captured.err
