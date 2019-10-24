@@ -26,7 +26,7 @@ class HideLessThanFilter(logging.Filter):
 
 DEFAULT_CONFIG = {
     "version": 1,
-    "disable_existing_loggers": True,
+    "disable_existing_loggers": False,
     "formatters": {
         "standard": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"}
     },
