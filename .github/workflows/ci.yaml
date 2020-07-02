@@ -32,12 +32,14 @@ jobs:
         run: make lint
       - name: Run tests
         run: make test
-      - name: Upload client coverage to Codecov
+      - name: Parse python version
+        run: echo ::set-env name=PY_SHORT_VERSION::$(echo '${{ matrix.py_version }}' | awk -F. '{print $1$2}')
+      - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: client/.coverage.xml
-          flags: py36
+          flags: ${{ env.PY_SHORT_VERSION }}
           name: codecov
   devpi_deploy:
     name: Release client
