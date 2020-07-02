@@ -38,7 +38,7 @@ jobs:
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          file: client/.coverage.xml
+          file: .coverage.xml
           flags: ${{ env.PY_SHORT_VERSION }}
           name: codecov
   devpi_deploy:
