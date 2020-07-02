@@ -39,7 +39,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: .coverage.xml
-          flags: ${{ env.PY_SHORT_VERSION }}
+          flags: py${{ env.PY_SHORT_VERSION }}
           name: codecov
   devpi_deploy:
     name: Release client
