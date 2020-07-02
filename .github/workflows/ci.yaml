@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        py_version: ["3.6.11", "3.7.7"]
+        py_version: ["3.6", "3.7"]
     steps:
       - name: Checkout commit
         uses: actions/checkout@v2
@@ -32,14 +32,12 @@ jobs:
         run: make lint
       - name: Run tests
         run: make test
-      - name: Parse python version
-        run: echo ::set-env name=PY_SHORT_VERSION::$(echo '${{ matrix.py_version }}' | awk -F. '{print $1$2}')
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: .coverage.xml
-          flags: py${{ env.PY_SHORT_VERSION }}
+          flags: py${{ matrix.py_version }}
           name: codecov
   devpi_deploy:
     name: Release client
