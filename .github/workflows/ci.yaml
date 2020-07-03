@@ -32,6 +32,10 @@ jobs:
         run: make lint
       - name: Run tests
         run: make test
+      - name: Set codecov flag
+        run: |
+          export CODECOV_FLAG="py${{ matrix.py_version }}"
+          echo ::set-env name=CODECOV_FLAG::${CODECOV_FLAG//.}
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
