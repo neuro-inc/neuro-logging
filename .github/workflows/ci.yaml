@@ -32,16 +32,12 @@ jobs:
         run: make lint
       - name: Run tests
         run: make test
-      - name: Set codecov flag
-        run: |
-          export CODECOV_FLAG="py${{ matrix.py_version }}"
-          echo ::set-env name=CODECOV_FLAG::${CODECOV_FLAG//.}
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           file: .coverage.xml
-          flags: ${{ env.CODECOV_FLAG }}
+          flags: py${{ matrix.py_version }}
           name: codecov
   devpi_deploy:
     name: Release client
