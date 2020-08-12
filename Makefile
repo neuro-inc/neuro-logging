@@ -12,10 +12,11 @@ setup:
 	pip install -r requirements-test.txt
 
 format:
-	isort -rc $(ISORT_TARGETS)
+	isort $(ISORT_TARGETS)
 	black $(BLACK_TARGETS)
 
 lint:
+	isort --check-only --diff $(ISORT_TARGETS)
 	black --check $(BLACK_TARGETS)
 	flake8 $(FLAKE8_TARGETS)
 	mypy $(MYPY_TARGETS)
