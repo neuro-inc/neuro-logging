@@ -11,7 +11,7 @@ logging.info("Some info")
 ```
 
 By default `init_logging()` will forward all `errors` and `critical` messages to `stderr`. All other type of messages will be forwarded to `stdout`.
-You can pass own dict-based config with custom setting i.e. for disable warning in asyncio and concurrent 
+You can pass own dict-based config with custom setting i.e. for disable warning in asyncio and concurrent
 
 ```python
 from platform_logging import init_logging, DEFAULT_CONFIG
@@ -22,5 +22,5 @@ custom_config.update(
     {"loggers": {"asyncio": {"level": "ERROR"}, "concurrent": {"level": "ERROR"}}}
 )
 
-init_logging(custom_config)    
+init_logging(custom_config)
 ```
