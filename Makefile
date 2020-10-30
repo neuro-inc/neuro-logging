@@ -10,15 +10,12 @@ FLAKE8_TARGETS:= $(ISORT_TARGETS)
 
 setup:
 	pip install -r requirements-test.txt
+	pre-commit install
 
 format:
-	isort $(ISORT_TARGETS)
-	black $(BLACK_TARGETS)
+	pre-commit run --all-files --show-diff-on-failure
 
-lint:
-	isort --check-only --diff $(ISORT_TARGETS)
-	black --check $(BLACK_TARGETS)
-	flake8 $(FLAKE8_TARGETS)
+lint: format
 	mypy $(MYPY_TARGETS)
 
 test:
