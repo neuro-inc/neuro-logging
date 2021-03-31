@@ -155,9 +155,12 @@ async def test_sentry_trace_config(server: TestServer) -> None:
     trace_config = make_sentry_trace_config()
 
     async with aiohttp.ClientSession(trace_configs=[trace_config]) as client:
+        current_span = sentry_sdk.Hub.current.scope.span
+
         await client.get(URL.build(host=server.host, port=server.port))
 
         assert "sentry-trace" in server.app["headers"]
+        assert current_span == sentry_sdk.Hub.current.scope.span
 
 
 async def test_sentry_trace_config_no_header(server: TestServer) -> None:
@@ -172,6 +175,21 @@ async def test_sentry_trace_config_no_header(server: TestServer) -> None:
         assert "sentry-trace" not in server.app["headers"]
 
 
+async def test_sentry_trace_config_exception(server: TestServer) -> None:
+    sentry_sdk.init(traces_sample_rate=1.0)
+    create_new_sentry_transaction()
+
+    trace_config = make_sentry_trace_config()
+
+    async with aiohttp.ClientSession(trace_configs=[trace_config]) as client:
+        current_span = sentry_sdk.Hub.current.scope.span
+
+        with pytest.raises(Exception):
+            await client.get(URL.build(host="unknown", port=server.port))
+
+        assert current_span == sentry_sdk.Hub.current.scope.span
+
+
 async def test_request_logging_trace_config(server: TestServer, capsys: Any) -> None:
     init_logging()
     trace_config = make_request_logging_trace_config(logging.getLogger(__name__))
@@ -180,5 +198,19 @@ async def test_request_logging_trace_config(server: TestServer, capsys: Any) -> 
         await client.get(URL.build(host=server.host, port=server.port))
 
     captured = capsys.readouterr()
-    assert "Sending" in captured.out
-    assert "Received" in captured.out
+    assert "Sending GET" in captured.out
+    assert "Received GET 200" in captured.out
+
+
+async def test_request_logging_trace_config_error(
+    server: TestServer, capsys: Any
+) -> None:
+    init_logging()
+    trace_config = make_request_logging_trace_config(logging.getLogger(__name__))
+
+    async with aiohttp.ClientSession(trace_configs=[trace_config]) as client:
+        await client.get(URL.build(host=server.host, port=server.port, path="/unknown"))
+
+    captured = capsys.readouterr()
+    assert "Sending GET" in captured.out
+    assert "Received GET 404" in captured.out
