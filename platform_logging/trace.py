@@ -190,7 +190,7 @@ def make_sentry_trace_config() -> TraceConfig:
         params: TraceRequestExceptionParams,
     ) -> None:
         parent_span = sentry_sdk.Hub.current.scope.span
-        if parent_span is None:
+        if parent_span is None:  # pragma: no cover
             return
 
         span = context._span
