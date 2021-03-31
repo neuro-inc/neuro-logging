@@ -108,7 +108,7 @@ def notrace(func: T) -> T:
 @web.middleware
 async def store_zipkin_span_middleware(
     request: web.Request, handler: Handler
-) -> web.StreamResponse:
+) -> web.StreamResponse:  # pragma: no cover
     tracer = aiozipkin.get_tracer(request.app)
     span = aiozipkin.request_span(request)
     CURRENT_TRACER.set(tracer)
@@ -131,22 +131,19 @@ def setup_zipkin(
     tracer: aiozipkin.Tracer,
     *,
     skip_routes: Optional[Iterable[AbstractRoute]] = None,
-) -> None:
+) -> None:  # pragma: no cover
     aiozipkin.setup(app, tracer, skip_routes=skip_routes)
     app.middlewares.append(store_zipkin_span_middleware)
 
 
 def setup_sentry(
     sentry_dsn: URL, app_name: str, cluster_name: str, sample_rate: float
-) -> None:
-    if sentry_dsn:
-        sentry_sdk.init(
-            dsn=str(sentry_dsn),
-            traces_sample_rate=sample_rate,
-            integrations=[
-                AioHttpIntegration(transaction_style="method_and_path_pattern")
-            ],
-        )
+) -> None:  # pragma: no cover
+    sentry_sdk.init(
+        dsn=str(sentry_dsn) or None,
+        traces_sample_rate=sample_rate,
+        integrations=[AioHttpIntegration(transaction_style="method_and_path_pattern")],
+    )
     sentry_sdk.set_tag("app", app_name)
     sentry_sdk.set_tag("cluster", cluster_name)
 

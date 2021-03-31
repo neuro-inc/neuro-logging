@@ -17,6 +17,7 @@ from platform_logging import init_logging
 from platform_logging.trace import (
     CURRENT_SPAN,
     CURRENT_TRACER,
+    create_zipkin_tracer,
     make_request_logging_trace_config,
     make_sentry_trace_config,
     notrace,
@@ -25,15 +26,15 @@ from platform_logging.trace import (
 
 
 @asynccontextmanager
-async def create_zipkin_tracer() -> AsyncIterator[aiozipkin.Tracer]:
-    async with aiozipkin.create("", aiozipkin.create_endpoint("test")) as tracer:
-        token = CURRENT_TRACER.set(tracer)
-        yield tracer
-        CURRENT_TRACER.reset(token)
+async def setup_zipkin_tracer() -> AsyncIterator[aiozipkin.Tracer]:
+    tracer = await create_zipkin_tracer("test", "zipkin", 80, URL("zipkin"), 1.0)
+    token = CURRENT_TRACER.set(tracer)
+    yield tracer
+    CURRENT_TRACER.reset(token)
 
 
 @asynccontextmanager
-async def create_zipkin_span(
+async def setup_zipkin_span(
     tracer: aiozipkin.Tracer,
 ) -> AsyncIterator[aiozipkin.SpanAbc]:
     context = TraceContext(
@@ -60,7 +61,7 @@ def create_new_sentry_transaction() -> None:
 @pytest.fixture
 async def server(
     aiohttp_server: Callable[[aiohttp.web.Application], Awaitable[TestServer]]
-) -> TestServer:
+) -> AsyncIterator[TestServer]:
     async def handle(request: aiohttp.web.Request) -> aiohttp.web.Response:
         request.app["headers"] = request.headers
         return aiohttp.web.Response()
@@ -68,12 +69,12 @@ async def server(
     app = aiohttp.web.Application()
     app.add_routes([aiohttp.web.get("/", handle)])
 
-    return await aiohttp_server(app)
+    yield await aiohttp_server(app)
 
 
 async def test_zipkin_trace() -> None:
-    async with create_zipkin_tracer() as tracer:
-        async with create_zipkin_span(tracer) as span:
+    async with setup_zipkin_tracer() as tracer:
+        async with setup_zipkin_span(tracer) as span:
             parent_span = span
 
             @trace
@@ -102,7 +103,7 @@ async def test_zipkin_trace_no_parent_span() -> None:
 
         assert span is not None
 
-    async with create_zipkin_tracer():
+    async with setup_zipkin_tracer():
         await func()
 
 
