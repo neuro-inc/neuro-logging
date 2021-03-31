@@ -2,12 +2,31 @@ import logging
 import logging.config
 from typing import Any, Dict, Union
 
+from .trace import (
+    create_zipkin_tracer,
+    make_request_logging_trace_config,
+    make_sentry_trace_config,
+    notrace,
+    setup_sentry,
+    setup_zipkin,
+    trace,
+)
 from .version import VERSION
 
 
 __version__ = VERSION
 
-__all__ = ["init_logging", "HideLessThanFilter"]
+__all__ = [
+    "init_logging",
+    "HideLessThanFilter",
+    "create_zipkin_tracer",
+    "make_request_logging_trace_config",
+    "make_sentry_trace_config",
+    "notrace",
+    "setup_sentry",
+    "setup_zipkin",
+    "trace",
+]
 
 
 class HideLessThanFilter(logging.Filter):
