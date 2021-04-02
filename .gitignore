@@ -16,3 +16,5 @@ venv
 
 # Other
 __pycache__
+
+.python-version
