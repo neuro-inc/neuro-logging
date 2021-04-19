@@ -206,13 +206,19 @@ def make_sentry_trace_config() -> TraceConfig:
     return trace_config
 
 
-def make_request_logging_trace_config(logger: logging.Logger) -> TraceConfig:
+def make_request_logging_trace_config(
+    logger: Optional[logging.Logger] = None,
+) -> TraceConfig:
+    log = logger or logging.getLogger(__name__)
+
+    assert logger
+
     async def on_request_start(
         session: ClientSession,
         trace_config_ctx: SimpleNamespace,
         params: TraceRequestStartParams,
     ) -> None:
-        logger.info("Sending %s %s", params.method, params.url)
+        log.info("Sending %s %s", params.method, params.url)
 
     async def on_request_end(
         session: ClientSession,
@@ -220,7 +226,7 @@ def make_request_logging_trace_config(logger: logging.Logger) -> TraceConfig:
         params: TraceRequestEndParams,
     ) -> None:
         if 400 <= params.response.status:
-            logger.warning(
+            log.warning(
                 "Received %s %s %s: %s",
                 params.method,
                 params.response.status,
@@ -228,7 +234,7 @@ def make_request_logging_trace_config(logger: logging.Logger) -> TraceConfig:
                 await params.response.text(),
             )
         else:
-            logger.info(
+            log.info(
                 "Received %s %s %s", params.method, params.response.status, params.url
             )
 
