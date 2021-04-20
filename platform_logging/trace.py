@@ -211,7 +211,7 @@ def make_request_logging_trace_config(
 ) -> TraceConfig:
     log = logger or logging.getLogger(__name__)
 
-    assert logger
+    assert log
 
     async def on_request_start(
         session: ClientSession,
