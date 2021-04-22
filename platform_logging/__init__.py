@@ -5,11 +5,15 @@ from typing import Any, Dict, Union
 from .trace import (
     make_request_logging_trace_config,
     make_sentry_trace_config,
+    new_sampled_trace,
+    new_trace,
+    new_trace_cm,
     notrace,
     setup_sentry,
     setup_zipkin,
     setup_zipkin_tracer,
     trace,
+    trace_cm,
 )
 from .version import VERSION
 
@@ -26,6 +30,10 @@ __all__ = [
     "setup_sentry",
     "setup_zipkin",
     "trace",
+    "trace_cm",
+    "new_sampled_trace",
+    "new_trace",
+    "new_trace_cm",
 ]
 
 

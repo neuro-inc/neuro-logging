@@ -48,7 +48,7 @@ T = TypeVar("T", bound=Callable[..., Awaitable[Any]])
 
 
 @asynccontextmanager
-async def start_zipkin_tracing_cm(
+async def new_zipkin_trace_cm(
     name: str, sampled: Optional[bool]
 ) -> AsyncIterator[Optional[SpanAbc]]:
     tracer = CURRENT_TRACER.get(None)
@@ -71,7 +71,7 @@ async def start_zipkin_tracing_cm(
 
 
 @asynccontextmanager
-async def start_sentry_tracing_cm(
+async def new_sentry_trace_cm(
     name: str, sampled: Optional[bool]
 ) -> AsyncIterator[sentry_sdk.tracing.Span]:
     with Hub(Hub.current) as hub:
@@ -90,16 +90,16 @@ async def start_sentry_tracing_cm(
 
 
 @asynccontextmanager
-async def start_tracing_cm(
+async def new_trace_cm(
     name: str, sampled: Optional[bool] = None
 ) -> AsyncIterator[None]:
-    async with start_zipkin_tracing_cm(name, sampled):
-        async with start_sentry_tracing_cm(name, sampled):
+    async with new_zipkin_trace_cm(name, sampled):
+        async with new_sentry_trace_cm(name, sampled):
             yield
 
 
 @asynccontextmanager
-async def zipkin_tracing_cm(name: str) -> AsyncIterator[Optional[SpanAbc]]:
+async def zipkin_trace_cm(name: str) -> AsyncIterator[Optional[SpanAbc]]:
     tracer = CURRENT_TRACER.get(None)
     if tracer is None:
         # No tracer is set,
@@ -122,7 +122,7 @@ async def zipkin_tracing_cm(name: str) -> AsyncIterator[Optional[SpanAbc]]:
 
 
 @asynccontextmanager
-async def sentry_tracing_cm(
+async def sentry_trace_cm(
     name: str,
 ) -> AsyncIterator[Optional[sentry_sdk.tracing.Span]]:
     parent_span = sentry_sdk.Hub.current.scope.span
@@ -144,9 +144,9 @@ async def sentry_tracing_cm(
 
 
 @asynccontextmanager
-async def tracing_cm(name: str) -> AsyncIterator[None]:
-    async with zipkin_tracing_cm(name):
-        async with sentry_tracing_cm(name):
+async def trace_cm(name: str) -> AsyncIterator[None]:
+    async with zipkin_trace_cm(name):
+        async with sentry_trace_cm(name):
             yield
 
 
@@ -154,7 +154,7 @@ def trace(func: T) -> T:
     @functools.wraps(func)
     async def tracer(*args: Any, **kwargs: Any) -> Any:
         name = func.__qualname__
-        async with tracing_cm(name):
+        async with trace_cm(name):
             return await func(*args, **kwargs)
 
     return cast(T, tracer)
@@ -163,7 +163,7 @@ def trace(func: T) -> T:
 def new_trace(func: T) -> T:
     async def _tracer(*args: Any, **kwargs: Any) -> Any:
         name = func.__qualname__
-        async with start_tracing_cm(name):
+        async with new_trace_cm(name):
             return await func(*args, **kwargs)
 
     @functools.wraps(func)
@@ -177,7 +177,7 @@ def new_trace(func: T) -> T:
 def new_sampled_trace(func: T) -> T:
     async def _tracer(*args: Any, **kwargs: Any) -> Any:
         name = func.__qualname__
-        async with start_tracing_cm(name, sampled=True):
+        async with new_trace_cm(name, sampled=True):
             return await func(*args, **kwargs)
 
     @functools.wraps(func)
