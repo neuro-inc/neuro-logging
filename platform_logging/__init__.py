@@ -5,6 +5,7 @@ from typing import Any, Dict, Union
 from .trace import (
     make_request_logging_trace_config,
     make_sentry_trace_config,
+    make_zipkin_trace_config,
     new_sampled_trace,
     new_trace,
     new_trace_cm,
@@ -23,12 +24,13 @@ __version__ = VERSION
 __all__ = [
     "init_logging",
     "HideLessThanFilter",
-    "setup_zipkin_tracer",
     "make_request_logging_trace_config",
     "make_sentry_trace_config",
+    "make_zipkin_trace_config",
     "notrace",
     "setup_sentry",
     "setup_zipkin",
+    "setup_zipkin_tracer",
     "trace",
     "trace_cm",
     "new_sampled_trace",
