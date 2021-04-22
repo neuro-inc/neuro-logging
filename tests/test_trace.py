@@ -17,26 +17,24 @@ from platform_logging import init_logging
 from platform_logging.trace import (
     CURRENT_SPAN,
     CURRENT_TRACER,
-    create_zipkin_tracer,
     make_request_logging_trace_config,
     make_sentry_trace_config,
+    new_sampled_trace,
+    new_trace,
     notrace,
+    setup_zipkin_tracer as _setup_zipkin_tracer,
     trace,
 )
 
 
-@asynccontextmanager
-async def setup_zipkin_tracer() -> AsyncIterator[aiozipkin.Tracer]:
-    tracer = await create_zipkin_tracer("test", "zipkin", 80, URL("zipkin"), 1.0)
-    token = CURRENT_TRACER.set(tracer)
-    yield tracer
-    CURRENT_TRACER.reset(token)
+def setup_zipkin_tracer(
+    sample_rate: float = 1,
+) -> None:
+    _setup_zipkin_tracer("test", "zipkin", 80, URL("zipkin"), sample_rate)
 
 
 @asynccontextmanager
-async def setup_zipkin_span(
-    tracer: aiozipkin.Tracer,
-) -> AsyncIterator[aiozipkin.SpanAbc]:
+async def setup_zipkin_span() -> AsyncIterator[aiozipkin.SpanAbc]:
     context = TraceContext(
         parent_id=None,
         trace_id="trace",
@@ -45,6 +43,7 @@ async def setup_zipkin_span(
         debug=False,
         shared=False,
     )
+    tracer = CURRENT_TRACER.get()
     span = NoopSpan(tracer, context)
     token = CURRENT_SPAN.set(span)
     yield span
@@ -73,17 +72,18 @@ async def server(
 
 
 async def test_zipkin_trace() -> None:
-    async with setup_zipkin_tracer() as tracer:
-        async with setup_zipkin_span(tracer) as span:
-            parent_span = span
+    setup_zipkin_tracer()
 
-            @trace
-            async def func() -> None:
-                span = CURRENT_SPAN.get()
+    async with setup_zipkin_span() as span:
+        parent_span = span
 
-                assert parent_span != span
+        @trace
+        async def func() -> None:
+            span = CURRENT_SPAN.get()
 
-            await func()
+            assert parent_span != span
+
+        await func()
 
 
 async def test_zipkin_trace_no_tracer() -> None:
@@ -101,10 +101,50 @@ async def test_zipkin_trace_no_parent_span() -> None:
     async def func() -> None:
         span = CURRENT_SPAN.get(None)
 
-        assert span is not None
+        assert span is None
 
-    async with setup_zipkin_tracer():
-        await func()
+    setup_zipkin_tracer()
+
+    await func()
+
+
+async def test_zipkin_new_trace() -> None:
+    setup_zipkin_tracer()
+
+    with pytest.raises(LookupError):
+        CURRENT_SPAN.get()
+
+    @new_trace
+    async def func() -> None:
+        span = CURRENT_SPAN.get()
+
+        assert span
+
+    await func()
+
+
+async def test_zipkin_new_trace_no_tracer() -> None:
+    @new_trace
+    async def func() -> None:
+        with pytest.raises(LookupError):
+            CURRENT_SPAN.get()
+
+    await func()
+
+
+async def test_zipkin_new_sampled_trace() -> None:
+    setup_zipkin_tracer(sample_rate=0)
+
+    with pytest.raises(LookupError):
+        CURRENT_SPAN.get()
+
+    @new_sampled_trace
+    async def func() -> None:
+        span = CURRENT_SPAN.get()
+
+        assert span.context.sampled is True
+
+    await func()
 
 
 async def test_sentry_trace() -> None:
@@ -131,6 +171,33 @@ async def test_sentry_trace_without_parent_span() -> None:
     @trace
     async def func() -> None:
         assert sentry_sdk.Hub.current.scope.span is None
+
+    await func()
+
+
+async def test_sentry_new_trace() -> None:
+    sentry_sdk.init(traces_sample_rate=1.0)
+
+    @new_trace
+    async def func() -> None:
+        span = sentry_sdk.Hub.current.scope.span
+
+        assert isinstance(span, Transaction)
+        assert span.name == "test_sentry_new_trace.<locals>.func"
+
+    await func()
+
+
+async def test_sentry_new_sampled_trace() -> None:
+    sentry_sdk.init(traces_sample_rate=0)
+
+    @new_sampled_trace
+    async def func() -> None:
+        span = sentry_sdk.Hub.current.scope.span
+
+        assert isinstance(span, Transaction)
+        assert span.name == "test_sentry_new_sampled_trace.<locals>.func"
+        assert span.sampled is True
 
     await func()
 

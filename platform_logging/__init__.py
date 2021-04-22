@@ -3,13 +3,17 @@ import logging.config
 from typing import Any, Dict, Union
 
 from .trace import (
-    create_zipkin_tracer,
     make_request_logging_trace_config,
     make_sentry_trace_config,
+    new_sampled_trace,
+    new_trace,
+    new_trace_cm,
     notrace,
     setup_sentry,
     setup_zipkin,
+    setup_zipkin_tracer,
     trace,
+    trace_cm,
 )
 from .version import VERSION
 
@@ -19,13 +23,17 @@ __version__ = VERSION
 __all__ = [
     "init_logging",
     "HideLessThanFilter",
-    "create_zipkin_tracer",
+    "setup_zipkin_tracer",
     "make_request_logging_trace_config",
     "make_sentry_trace_config",
     "notrace",
     "setup_sentry",
     "setup_zipkin",
     "trace",
+    "trace_cm",
+    "new_sampled_trace",
+    "new_trace",
+    "new_trace_cm",
 ]
 
 
