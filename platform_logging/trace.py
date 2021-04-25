@@ -285,7 +285,8 @@ def make_sentry_trace_config() -> TraceConfig:
         span.__enter__()
 
         ctx = context.trace_request_ctx
-        propagate_headers = ctx is None or ctx.get("propagate_headers", True)
+        propagate_headers = ctx is None or getattr(ctx, "propagate_headers", True)
+
         if propagate_headers:
             params.headers.update(span.iter_headers())
 

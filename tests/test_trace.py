@@ -1,5 +1,6 @@
 import logging
 from contextlib import asynccontextmanager
+from types import SimpleNamespace
 from typing import Any, AsyncIterator, Awaitable, Callable
 
 import aiohttp
@@ -227,6 +228,26 @@ async def test_sentry_trace_config(server: TestServer) -> None:
         await client.get(URL.build(host=server.host, port=server.port))
 
         assert "sentry-trace" in server.app["headers"]
+        assert current_span == sentry_sdk.Hub.current.scope.span
+
+
+async def test_sentry_trace_config_explicit_trace_ctx(server: TestServer) -> None:
+    sentry_sdk.init(traces_sample_rate=1.0)
+    create_new_sentry_transaction()
+
+    trace_config = make_sentry_trace_config()
+
+    async with aiohttp.ClientSession(trace_configs=[trace_config]) as client:
+        current_span = sentry_sdk.Hub.current.scope.span
+
+        ctx = SimpleNamespace()
+        ctx.propagate_headers = False
+
+        await client.get(
+            URL.build(host=server.host, port=server.port), trace_request_ctx=ctx
+        )
+
+        assert "sentry-trace" not in server.app["headers"]
         assert current_span == sentry_sdk.Hub.current.scope.span
 
 
