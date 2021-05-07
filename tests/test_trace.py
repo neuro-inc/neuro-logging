@@ -1,7 +1,8 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
-from typing import Any, AsyncIterator, Awaitable, Callable
+from typing import Any, AsyncIterator, Awaitable, Callable, List
 
 import aiohttp
 import aiohttp.web
@@ -11,7 +12,7 @@ import sentry_sdk
 from aiohttp.test_utils import TestServer
 from aiozipkin.helpers import TraceContext
 from aiozipkin.span import NoopSpan
-from sentry_sdk.tracing import Transaction
+from sentry_sdk.tracing import Span, Transaction
 from yarl import URL
 
 from platform_logging import init_logging
@@ -70,6 +71,20 @@ async def server(
     app.add_routes([aiohttp.web.get("/", handle)])
 
     yield await aiohttp_server(app)
+
+
+def make_sentry_span_collector_trace_config() -> aiohttp.TraceConfig:
+    async def on_request_start(
+        session: aiohttp.ClientSession,
+        context: SimpleNamespace,
+        params: aiohttp.TraceRequestStartParams,
+    ) -> None:
+        context.trace_request_ctx.span = sentry_sdk.Hub.current.scope.span
+
+    trace_config = aiohttp.TraceConfig()
+    trace_config.on_request_start.append(on_request_start)
+
+    return trace_config
 
 
 async def test_zipkin_trace() -> None:
@@ -165,6 +180,32 @@ async def test_sentry_trace() -> None:
     await func()
 
 
+async def test_sentry_trace_multiple_tasks() -> None:
+    sentry_sdk.init(traces_sample_rate=1.0)
+    create_new_sentry_transaction()
+    parent_span = sentry_sdk.Hub.current.scope.span
+    spans = []
+
+    assert parent_span
+
+    @trace
+    async def func() -> None:
+        await asyncio.sleep(0)
+        span = sentry_sdk.Hub.current.scope.span
+
+        assert span
+
+        spans.append(span)
+
+    await asyncio.gather(func(), func())
+
+    span1, span2 = spans
+
+    assert span1.span_id != span2.span_id
+    assert span1.parent_span_id == parent_span.span_id
+    assert span2.parent_span_id == parent_span.span_id
+
+
 async def test_sentry_trace_without_parent_span() -> None:
     sentry_sdk.init(traces_sample_rate=1.0)
     sentry_sdk.Hub.current.scope.span = None
@@ -187,6 +228,26 @@ async def test_sentry_new_trace() -> None:
         assert span.name == "test_sentry_new_trace.<locals>.func"
 
     await func()
+
+
+async def test_sentry_new_trace_multiple_tasks() -> None:
+    sentry_sdk.init(traces_sample_rate=1.0)
+    spans: List[Span] = []
+
+    @new_trace
+    async def func() -> None:
+        await asyncio.sleep(0)
+        span = sentry_sdk.Hub.current.scope.span
+
+        spans.append(span)
+
+    await asyncio.gather(func(), func())
+
+    span1, span2 = spans
+
+    assert span1
+    assert span2
+    assert span1.trace_id != span2.trace_id
 
 
 async def test_sentry_new_sampled_trace() -> None:
@@ -249,6 +310,39 @@ async def test_sentry_trace_config_explicit_trace_ctx(server: TestServer) -> Non
 
         assert "sentry-trace" not in server.app["headers"]
         assert current_span == sentry_sdk.Hub.current.scope.span
+
+
+async def test_sentry_trace_config_multiple_tasks(server: TestServer) -> None:
+    sentry_sdk.init(traces_sample_rate=1.0)
+    create_new_sentry_transaction()
+
+    trace_configs = [
+        make_sentry_trace_config(),
+        make_sentry_span_collector_trace_config(),
+    ]
+
+    async with aiohttp.ClientSession(trace_configs=trace_configs) as client:
+        current_span = sentry_sdk.Hub.current.scope.span
+
+        ctx1 = SimpleNamespace()
+        ctx2 = SimpleNamespace()
+
+        await asyncio.gather(
+            client.get(
+                URL.build(host=server.host, port=server.port),
+                trace_request_ctx=ctx1,
+            ),
+            client.get(
+                URL.build(host=server.host, port=server.port),
+                trace_request_ctx=ctx2,
+            ),
+        )
+
+        assert current_span
+        assert current_span == sentry_sdk.Hub.current.scope.span
+        assert ctx1.span.span_id != ctx2.span.span_id
+        assert ctx1.span.parent_span_id == current_span.span_id
+        assert ctx2.span.parent_span_id == current_span.span_id
 
 
 async def test_sentry_trace_config_no_header(server: TestServer) -> None:

@@ -131,16 +131,23 @@ async def sentry_trace_cm(
         # the call is made from unittest most likely.
         yield None
     else:
-        with parent_span.start_child(op="call", description=name) as child:
-            try:
-                yield child
-            except asyncio.CancelledError:
-                child.set_status("cancelled")
-                raise
-            except Exception as exc:
-                hub = child.hub or Hub.current
-                hub.capture_exception(error=exc)
-                raise
+        # Hub manages context vars and should be created per each span
+        with Hub(Hub.current) as hub:
+            parent_span = hub.scope.span
+
+            if parent_span is None:
+                yield None
+                return
+
+            with parent_span.start_child(op="call", description=name) as child:
+                try:
+                    yield child
+                except asyncio.CancelledError:
+                    child.set_status("cancelled")
+                    raise
+                except Exception as exc:
+                    hub.capture_exception(error=exc)
+                    raise
 
 
 @asynccontextmanager
@@ -151,11 +158,15 @@ async def trace_cm(name: str) -> AsyncIterator[None]:
 
 
 def trace(func: T) -> T:
-    @functools.wraps(func)
-    async def tracer(*args: Any, **kwargs: Any) -> Any:
+    async def _tracer(*args: Any, **kwargs: Any) -> Any:
         name = func.__qualname__
         async with trace_cm(name):
             return await func(*args, **kwargs)
+
+    @functools.wraps(func)
+    async def tracer(*args: Any, **kwargs: Any) -> Any:
+        # Create a task to wrap method call to avoid scope data leakage between calls.
+        return await asyncio.create_task(_tracer(*args, **kwargs))
 
     return cast(T, tracer)
 
@@ -191,7 +202,7 @@ def new_sampled_trace(func: T) -> T:
 def notrace(func: T) -> T:
     @functools.wraps(func)
     async def tracer(*args: Any, **kwargs: Any) -> Any:
-        with sentry_sdk.Hub.current.configure_scope() as scope:
+        with Hub.current.configure_scope() as scope:
             transaction = scope.transaction
             if transaction is not None:
                 transaction.sampled = False
@@ -275,9 +286,16 @@ def make_sentry_trace_config() -> TraceConfig:
         context: SimpleNamespace,
         params: TraceRequestStartParams,
     ) -> None:
-        parent_span = sentry_sdk.Hub.current.scope.span
+        hub = Hub.current
+
+        parent_span = hub.scope.span
         if parent_span is None:
             return
+
+        # Hub manages context vars and should be created per each span
+        hub = Hub(hub)
+        context._hub = hub
+        hub.__enter__()
 
         span_name = f"{params.method.upper()} {params.url.path}"
         span = parent_span.start_child(op="client", description=span_name)
@@ -293,9 +311,13 @@ def make_sentry_trace_config() -> TraceConfig:
     async def on_request_end(
         session: ClientSession, context: SimpleNamespace, params: TraceRequestEndParams
     ) -> None:
-        parent_span = sentry_sdk.Hub.current.scope.span
-        if parent_span is None:
+        hub = getattr(context, "_hub", None)
+
+        if not hub:
             return
+
+        hub.__exit__(None, None, None)
+        del context._hub
 
         span = context._span
         span.__exit__(None, None, None)
@@ -306,12 +328,17 @@ def make_sentry_trace_config() -> TraceConfig:
         context: SimpleNamespace,
         params: TraceRequestExceptionParams,
     ) -> None:
-        parent_span = sentry_sdk.Hub.current.scope.span
-        if parent_span is None:  # pragma: no cover
+        hub = getattr(context, "_hub", None)
+
+        if not hub:
             return
 
-        span = context._span
         exc = params.exception
+
+        hub.__exit__(type(exc), exc, exc.__traceback__)
+        del context._hub
+
+        span = context._span
         span.__exit__(type(exc), exc, exc.__traceback__)
         del context._span
 
