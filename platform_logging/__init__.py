@@ -1,5 +1,6 @@
 import logging
 import logging.config
+import os
 from typing import Any, Dict, Union
 
 from .trace import (
@@ -53,6 +54,12 @@ class HideLessThanFilter(logging.Filter):
         return record.levelno < self.level
 
 
+if "NP_LOG_LEVEL" in os.environ:
+    _default_log_level = logging.getLevelName(os.environ["NP_LOG_LEVEL"])
+else:
+    _default_log_level = logging.WARNING
+
+
 DEFAULT_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -77,7 +84,7 @@ DEFAULT_CONFIG = {
             "stream": "ext://sys.stderr",
         },
     },
-    "root": {"level": logging.NOTSET, "handlers": ["stderr", "stdout"]},
+    "root": {"level": _default_log_level, "handlers": ["stderr", "stdout"]},
 }
 
 
