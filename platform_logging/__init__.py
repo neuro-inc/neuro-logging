@@ -57,7 +57,7 @@ class HideLessThanFilter(logging.Filter):
 if "NP_LOG_LEVEL" in os.environ:
     _default_log_level = logging.getLevelName(os.environ["NP_LOG_LEVEL"])
 else:
-    _default_log_level = logging.INFO
+    _default_log_level = logging.WARNING
 
 
 DEFAULT_CONFIG = {
