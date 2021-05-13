@@ -1,10 +1,16 @@
 import logging
+import os
 import re
 from typing import Any
 
 import pytest
 
-from platform_logging import DEFAULT_CONFIG, HideLessThanFilter, init_logging
+
+try:
+    os.environ["NP_LOG_LEVEL"] = "NOTSET"
+    from platform_logging import DEFAULT_CONFIG, HideLessThanFilter, init_logging
+finally:
+    del os.environ["NP_LOG_LEVEL"]
 
 
 def _log_all_messages() -> None:
