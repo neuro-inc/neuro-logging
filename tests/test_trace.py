@@ -26,6 +26,7 @@ from platform_logging.trace import (
     notrace,
     setup_zipkin_tracer as _setup_zipkin_tracer,
     trace,
+    trace_cm,
 )
 
 
@@ -178,6 +179,22 @@ async def test_sentry_trace() -> None:
         assert span.description == "test_sentry_trace.<locals>.func"
 
     await func()
+
+
+async def test_sentry_trace_cm_data() -> None:
+    sentry_sdk.init(traces_sample_rate=1.0)
+    create_new_sentry_transaction()
+
+    async with trace_cm(
+        "test", tags={"test1": "val1", "test2": "val2"}, data={"data": "value"}
+    ):
+
+        span = sentry_sdk.Hub.current.scope.span
+
+        assert span
+        assert span._tags["test1"] == "val1"
+        assert span._tags["test2"] == "val2"
+        assert span._data["data"] == "value"
 
 
 async def test_sentry_trace_multiple_tasks() -> None:
