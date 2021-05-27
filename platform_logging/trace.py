@@ -11,6 +11,7 @@ from typing import (
     Callable,
     Iterable,
     List,
+    Mapping,
     Optional,
     Type,
     TypeVar,
@@ -124,6 +125,8 @@ async def zipkin_trace_cm(name: str) -> AsyncIterator[Optional[SpanAbc]]:
 @asynccontextmanager
 async def sentry_trace_cm(
     name: str,
+    tags: Optional[Mapping[str, str]] = None,
+    data: Optional[Mapping[str, Any]] = None,
 ) -> AsyncIterator[Optional[sentry_sdk.tracing.Span]]:
     parent_span = sentry_sdk.Hub.current.scope.span
     if parent_span is None:
@@ -140,6 +143,12 @@ async def sentry_trace_cm(
                 return
 
             with parent_span.start_child(op="call", description=name) as child:
+                if tags:
+                    for key, value in tags.items():
+                        child.set_tag(key, value)
+                if data:
+                    for key, value in data.items():
+                        child.set_data(key, value)
                 try:
                     yield child
                 except asyncio.CancelledError:
@@ -151,9 +160,13 @@ async def sentry_trace_cm(
 
 
 @asynccontextmanager
-async def trace_cm(name: str) -> AsyncIterator[None]:
+async def trace_cm(
+    name: str,
+    tags: Optional[Mapping[str, str]] = None,
+    data: Optional[Mapping[str, str]] = None,
+) -> AsyncIterator[None]:
     async with zipkin_trace_cm(name):
-        async with sentry_trace_cm(name):
+        async with sentry_trace_cm(name, tags=tags, data=data):
             yield
 
 
