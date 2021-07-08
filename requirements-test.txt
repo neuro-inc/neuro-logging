@@ -9,3 +9,4 @@ pre-commit==2.13.0
 pytest==6.2.4
 pytest-aiohttp
 pytest-cov==2.12.1
+types-pkg_resources==0.1.3
