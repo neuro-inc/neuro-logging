@@ -14,6 +14,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     cast,
@@ -266,23 +267,41 @@ def setup_zipkin(
     app.middlewares.append(store_zipkin_span_middleware)
 
 
-def _sentry_before_send(event: Dict[str, Any], hint: Any) -> Optional[Dict[str, Any]]:
-    exc_info = hint.get("exc_info")
-    if exc_info is not None:
-        exc_typ, exc_val, tb = exc_info
-        if isinstance(exc_val, (asyncio.CancelledError, aiohttp.ServerConnectionError)):
-            return None
-    return event
+def _make_sentry_before_send(
+    exclude: Sequence[Type[BaseException]] = (),
+) -> Callable[[Dict[str, Any], Any], Optional[Dict[str, Any]]]:
+    exceptions = tuple(exclude) + (
+        asyncio.CancelledError,
+        aiohttp.ServerConnectionError,
+    )
+
+    def _sentry_before_send(
+        event: Dict[str, Any],
+        hint: Any,
+    ) -> Optional[Dict[str, Any]]:
+        exc_info = hint.get("exc_info")
+        if exc_info is not None:
+            exc_typ, exc_val, tb = exc_info
+            if isinstance(exc_val, exceptions):
+                return None
+        return event
+
+    return _sentry_before_send
 
 
 def setup_sentry(
-    sentry_dsn: URL, app_name: str, cluster_name: str, sample_rate: float
+    sentry_dsn: URL,
+    app_name: str,
+    cluster_name: str,
+    sample_rate: float,
+    *,
+    exclude: Sequence[Type[BaseException]] = (),
 ) -> None:  # pragma: no cover
     sentry_sdk.init(
         dsn=str(sentry_dsn) or None,
         traces_sample_rate=sample_rate,
         integrations=[AioHttpIntegration(transaction_style="method_and_path_pattern")],
-        before_send=_sentry_before_send,
+        before_send=_make_sentry_before_send(exclude),
     )
     sentry_sdk.set_tag("app", app_name)
     sentry_sdk.set_tag("cluster", cluster_name)
