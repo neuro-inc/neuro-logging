@@ -8,7 +8,7 @@ import pytest
 
 try:
     os.environ["NP_LOG_LEVEL"] = "NOTSET"
-    from platform_logging import DEFAULT_CONFIG, HideLessThanFilter, init_logging
+    from neuro_logging import DEFAULT_CONFIG, HideLessThanFilter, init_logging
 finally:
     del os.environ["NP_LOG_LEVEL"]
 

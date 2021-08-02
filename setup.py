@@ -2,9 +2,9 @@ from setuptools import find_packages, setup
 
 
 setup(
-    name="platform-logging",
+    name="neuro-logging",
     python_requires=">=3.8",
-    url="https://github.com/neuro-inc/platform-logging",
+    url="https://github.com/neuro-inc/neuro-logging",
     packages=find_packages(),
     setup_requires=["setuptools_scm"],
     install_requires=[

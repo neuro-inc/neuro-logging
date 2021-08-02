@@ -1,8 +1,8 @@
-# Platform Logging
+# Neuro Platform Logging
 
 Usage:
 ```python
-from platform_logging import init_logging
+from neuro_logging import init_logging
 import logging
 
 init_logging()
@@ -14,7 +14,7 @@ By default `init_logging()` will forward all `errors` and `critical` messages to
 You can pass own dict-based config with custom setting i.e. for disable warning in asyncio and concurrent
 
 ```python
-from platform_logging import init_logging, DEFAULT_CONFIG
+from neuro_logging import init_logging, DEFAULT_CONFIG
 import logging
 
 custom_config = dict(DEFAULT_CONFIG)

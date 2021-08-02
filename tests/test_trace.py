@@ -15,8 +15,8 @@ from aiozipkin.span import NoopSpan
 from sentry_sdk.tracing import Span, Transaction
 from yarl import URL
 
-from platform_logging import init_logging
-from platform_logging.trace import (
+from neuro_logging import init_logging
+from neuro_logging.trace import (
     CURRENT_SPAN,
     CURRENT_TRACER,
     make_request_logging_trace_config,

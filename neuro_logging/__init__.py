@@ -3,6 +3,8 @@ import logging.config
 import os
 from typing import Any, Dict, Union
 
+from pkg_resources import get_distribution
+
 from .trace import (
     make_request_logging_trace_config,
     make_sentry_trace_config,
@@ -17,10 +19,9 @@ from .trace import (
     trace,
     trace_cm,
 )
-from .version import VERSION
 
 
-__version__ = VERSION
+__version__ = get_distribution(__name__).version
 
 __all__ = [
     "init_logging",
@@ -67,7 +68,7 @@ DEFAULT_CONFIG = {
         "standard": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"}
     },
     "filters": {
-        "hide_errors": {"()": "platform_logging.HideLessThanFilter", "level": "ERROR"}
+        "hide_errors": {"()": f"{__name__}.HideLessThanFilter", "level": "ERROR"}
     },
     "handlers": {
         "stdout": {
