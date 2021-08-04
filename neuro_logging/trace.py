@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import logging
+import sys
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from types import SimpleNamespace
@@ -22,6 +23,7 @@ from typing import (
 
 import aiohttp
 import aiozipkin
+import pkg_resources
 import sentry_sdk
 from aiohttp import (
     ClientSession,
@@ -289,6 +291,13 @@ def _make_sentry_before_send(
     return _sentry_before_send
 
 
+def _find_caller_version() -> str:
+    caller = sys._getframe(1)
+    package, sep, tail = caller.f_globals["__package__"].partition(".")
+    version = pkg_resources.get_distribution(package).version
+    return f"{package}@{version}"
+
+
 def setup_sentry(
     sentry_dsn: URL,
     app_name: str,
@@ -302,6 +311,7 @@ def setup_sentry(
         traces_sample_rate=sample_rate,
         integrations=[AioHttpIntegration(transaction_style="method_and_path_pattern")],
         before_send=_make_sentry_before_send(exclude),
+        release=_find_caller_version(),
     )
     sentry_sdk.set_tag("app", app_name)
     sentry_sdk.set_tag("cluster", cluster_name)
