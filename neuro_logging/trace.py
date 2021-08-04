@@ -293,9 +293,11 @@ def _make_sentry_before_send(
 
 def _find_caller_version(stacklevel: int) -> str:
     caller = inspect.currentframe()
+    assert caller is not None
     while stacklevel:
         caller = caller.f_back
         stacklevel -= 1
+        assert caller is not None
     package, sep, tail = caller.f_globals["__package__"].partition(".")
     version = pkg_resources.get_distribution(package).version
     return f"{package}@{version}"
