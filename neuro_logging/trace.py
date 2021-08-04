@@ -294,7 +294,8 @@ def _make_sentry_before_send(
 def _find_caller_version() -> str:
     caller = sys._getframe(1)
     package, sep, tail = caller.f_globals["__package__"].partition(".")
-    return str(pkg_resources.get_distribution(package).version)
+    version = pkg_resources.get_distribution(package).version
+    return f"{package}@{version}"
 
 
 def setup_sentry(
