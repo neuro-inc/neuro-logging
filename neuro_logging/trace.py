@@ -1,7 +1,7 @@
 import asyncio
 import functools
+import inspect
 import logging
-import sys
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from types import SimpleNamespace
@@ -291,8 +291,11 @@ def _make_sentry_before_send(
     return _sentry_before_send
 
 
-def _find_caller_version() -> str:
-    caller = sys._getframe(1)
+def _find_caller_version(stacklevel: int) -> str:
+    caller = inspect.currentframe()
+    while stacklevel:
+        caller = caller.f_back
+        stacklevel -= 1
     package, sep, tail = caller.f_globals["__package__"].partition(".")
     version = pkg_resources.get_distribution(package).version
     return f"{package}@{version}"
@@ -311,7 +314,7 @@ def setup_sentry(
         traces_sample_rate=sample_rate,
         integrations=[AioHttpIntegration(transaction_style="method_and_path_pattern")],
         before_send=_make_sentry_before_send(exclude),
-        release=_find_caller_version(),
+        release=_find_caller_version(2),
         environment=cluster_name,
     )
     sentry_sdk.set_tag("app", app_name)
