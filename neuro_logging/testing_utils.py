@@ -4,5 +4,5 @@
 from neuro_logging.trace import _find_caller_version
 
 
-def _get_test_version():
+def _get_test_version() -> str:
     return _find_caller_version()
