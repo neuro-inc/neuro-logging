@@ -312,6 +312,7 @@ def setup_sentry(
         integrations=[AioHttpIntegration(transaction_style="method_and_path_pattern")],
         before_send=_make_sentry_before_send(exclude),
         release=_find_caller_version(),
+        environment=cluster_name,
     )
     sentry_sdk.set_tag("app", app_name)
     sentry_sdk.set_tag("cluster", cluster_name)
