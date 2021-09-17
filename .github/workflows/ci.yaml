@@ -34,11 +34,14 @@ jobs:
       uses: actions/cache@v2.1.6
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-py-${{ matrix.py_version }}-${{ hashFiles('setup.py') }}-${{ hashFiles('requirements-test.txt') }}
+        key: ${{ runner.os }}-py-${{ matrix.py_version }}-${{ hashFiles('setup.py')
+          }}-${{ hashFiles('requirements-test.txt') }}
     - name: Install dependencies
       run: make setup
     - name: Lint
-      run: make lint
+      run: |
+        echo "::add-matcher::.github/actionlint-matcher.json"
+        make lint
       env:
         CI_LINT_RUN: 1
     - name: Run tests
