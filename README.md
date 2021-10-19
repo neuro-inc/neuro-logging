@@ -1,6 +1,7 @@
 # Neuro Platform Logging
 
 Usage:
+
 ```python
 from neuro_logging import init_logging
 import logging
@@ -19,7 +20,7 @@ import logging
 
 custom_config = dict(DEFAULT_CONFIG)
 custom_config.update(
-    {"loggers": {"asyncio": {"level": "ERROR"}, "concurrent": {"level": "ERROR"}}}
+	{"loggers": {"asyncio": {"level": "ERROR"}, "concurrent": {"level": "ERROR"}}}
 )
 
 init_logging(custom_config)
