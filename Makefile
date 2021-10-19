@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-ISORT_TARGETS := neuro_logging setup.py tests
+ISORT_TARGETS := neuro_logging tests
 BLACK_TARGETS := $(ISORT_TARGETS)
 MYPY_TARGETS :=  $(ISORT_TARGETS)
 FLAKE8_TARGETS:= $(ISORT_TARGETS)
