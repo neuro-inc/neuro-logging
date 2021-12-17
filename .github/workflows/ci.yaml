@@ -6,8 +6,6 @@ on:
     tags: [v*]
   pull_request:
     branches: [master]
-  pull_request_target:
-    branches: [master]
   schedule:
   - cron: 0 4 * * *
 jobs:
@@ -64,7 +62,7 @@ jobs:
         key: unit-${{ matrix.python-version }}
   check:  # The branch protection check
     if: always()
-    needs: [test]
+    needs: [lint, test]
     runs-on: ubuntu-latest
     steps:
     - name: Decide whether the needed jobs succeeded or failed
