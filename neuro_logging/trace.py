@@ -28,7 +28,6 @@ from sentry_sdk import Hub
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from yarl import URL
 
-
 Handler = Callable[[web.Request], Awaitable[web.StreamResponse]]
 
 
