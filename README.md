@@ -3,8 +3,9 @@
 Usage:
 
 ```python
-from neuro_logging import init_logging
 import logging
+
+from neuro_logging import init_logging
 
 init_logging()
 
@@ -15,12 +16,11 @@ By default `init_logging()` will forward all `errors` and `critical` messages to
 You can pass own dict-based config with custom setting i.e. for disable warning in asyncio and concurrent
 
 ```python
-from neuro_logging import init_logging, DEFAULT_CONFIG
-import logging
+from neuro_logging import DEFAULT_CONFIG, init_logging
 
 custom_config = dict(DEFAULT_CONFIG)
 custom_config.update(
-	{"loggers": {"asyncio": {"level": "ERROR"}, "concurrent": {"level": "ERROR"}}}
+    {"loggers": {"asyncio": {"level": "ERROR"}, "concurrent": {"level": "ERROR"}}}
 )
 
 init_logging(custom_config)

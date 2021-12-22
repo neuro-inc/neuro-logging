@@ -19,7 +19,6 @@ from .trace import (
     trace_cm,
 )
 
-
 __version__ = version(__package__)
 
 __all__ = [
