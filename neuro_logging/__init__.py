@@ -1,9 +1,8 @@
 import logging
 import logging.config
 import os
-from typing import Any, Dict, Union
-
-from pkg_resources import get_distribution
+from importlib.metadata import version
+from typing import Any, Union
 
 from .trace import (
     make_request_logging_trace_config,
@@ -21,7 +20,7 @@ from .trace import (
 )
 
 
-__version__ = get_distribution(__name__).version
+__version__ = version(__package__)
 
 __all__ = [
     "init_logging",
@@ -89,5 +88,5 @@ DEFAULT_CONFIG = {
 }
 
 
-def init_logging(config: Dict[str, Any] = DEFAULT_CONFIG) -> None:
+def init_logging(config: dict[str, Any] = DEFAULT_CONFIG) -> None:
     logging.config.dictConfig(config)

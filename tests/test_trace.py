@@ -1,8 +1,9 @@
 import asyncio
 import logging
+from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
 from types import SimpleNamespace
-from typing import Any, AsyncIterator, Awaitable, Callable, List, Optional
+from typing import Any, Optional
 
 import aiohttp
 import aiohttp.web
@@ -249,7 +250,7 @@ async def test_sentry_new_trace() -> None:
 
 async def test_sentry_new_trace_multiple_tasks() -> None:
     sentry_sdk.init(traces_sample_rate=1.0)
-    spans: List[Optional[Span]] = []
+    spans: list[Optional[Span]] = []
 
     @new_trace
     async def func() -> None:

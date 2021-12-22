@@ -2,28 +2,15 @@ import asyncio
 import functools
 import inspect
 import logging
+from collections.abc import AsyncIterator, Callable, Iterable, Mapping, Sequence
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
+from importlib.metadata import version
 from types import SimpleNamespace
-from typing import (
-    Any,
-    AsyncIterator,
-    Awaitable,
-    Callable,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Type,
-    TypeVar,
-    cast,
-)
+from typing import Any, Awaitable, Optional, TypeVar, cast
 
 import aiohttp
 import aiozipkin
-import pkg_resources
 import sentry_sdk
 from aiohttp import (
     ClientSession,
@@ -244,7 +231,7 @@ def setup_zipkin_tracer(
     zipkin_url: URL,
     sample_rate: float = 0.01,
     send_interval: float = 5,
-    ignored_exceptions: Optional[List[Type[Exception]]] = None,
+    ignored_exceptions: Optional[list[type[Exception]]] = None,
 ) -> None:
     endpoint = aiozipkin.create_endpoint(app_name, ipv4=host, port=port)
     sampler = aiozipkin.Sampler(sample_rate=sample_rate)
@@ -270,17 +257,17 @@ def setup_zipkin(
 
 
 def _make_sentry_before_send(
-    exclude: Sequence[Type[BaseException]] = (),
-) -> Callable[[Dict[str, Any], Any], Optional[Dict[str, Any]]]:
+    exclude: Sequence[type[BaseException]] = (),
+) -> Callable[[dict[str, Any], Any], Optional[dict[str, Any]]]:
     exceptions = tuple(exclude) + (
         asyncio.CancelledError,
         aiohttp.ServerConnectionError,
     )
 
     def _sentry_before_send(
-        event: Dict[str, Any],
+        event: dict[str, Any],
         hint: Any,
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Optional[dict[str, Any]]:
         exc_info = hint.get("exc_info")
         if exc_info is not None:
             exc_typ, exc_val, tb = exc_info
@@ -299,8 +286,8 @@ def _find_caller_version(stacklevel: int) -> str:
         stacklevel -= 1
         assert caller is not None
     package, sep, tail = caller.f_globals["__package__"].partition(".")
-    version = pkg_resources.get_distribution(package).version
-    return f"{package}@{version}"
+    ver = version(package)
+    return f"{package}@{ver}"
 
 
 def setup_sentry(
@@ -309,7 +296,7 @@ def setup_sentry(
     cluster_name: str,
     sample_rate: float,
     *,
-    exclude: Sequence[Type[BaseException]] = (),
+    exclude: Sequence[type[BaseException]] = (),
 ) -> None:  # pragma: no cover
     sentry_sdk.init(
         dsn=str(sentry_dsn) or None,
