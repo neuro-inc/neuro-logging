@@ -18,7 +18,7 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.sha }}
     - name: Install python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
     - name: Cache packages
       uses: actions/cache@v2.1.7
       with:
@@ -43,7 +43,7 @@ jobs:
       with:
         ref: ${{ github.event.pull_request.head.sha }}
     - name: Install python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
     - name: Cache packages
@@ -81,7 +81,7 @@ jobs:
     - name: Checkout commit
       uses: actions/checkout@v2
     - name: Install python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: 3.9.9
     - name: Install dependencies
