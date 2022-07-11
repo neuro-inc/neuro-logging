@@ -2,12 +2,19 @@ import asyncio
 import functools
 import inspect
 import logging
-from collections.abc import AsyncIterator, Callable, Iterable, Mapping, Sequence
+from collections.abc import (
+    AsyncIterator,
+    Awaitable,
+    Callable,
+    Iterable,
+    Mapping,
+    Sequence,
+)
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 from importlib.metadata import version
 from types import SimpleNamespace
-from typing import Any, Awaitable, Optional, TypeVar, cast
+from typing import Any, Optional, TypeVar, cast
 
 import aiohttp
 import aiozipkin
