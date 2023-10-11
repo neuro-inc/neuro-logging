@@ -1,5 +1,5 @@
 -e .
-mypy==1.5.1
+mypy==1.6.0
 mypy-extensions==1.0.0
 pre-commit==3.4.0
 pytest==7.4.2
