@@ -1,20 +1,15 @@
 import logging
 import logging.config
-import os
+import typing as t
 from importlib.metadata import version
-from typing import Any, Union
 
+from .config import EnvironConfigFactory
 from .trace import (
-    make_request_logging_trace_config,
-    make_sentry_trace_config,
-    make_zipkin_trace_config,
     new_sampled_trace,
     new_trace,
     new_trace_cm,
     notrace,
     setup_sentry,
-    setup_zipkin,
-    setup_zipkin_tracer,
     trace,
     trace_cm,
 )
@@ -23,14 +18,9 @@ __version__ = version(__package__)
 
 __all__ = [
     "init_logging",
-    "HideLessThanFilter",
-    "make_request_logging_trace_config",
-    "make_sentry_trace_config",
-    "make_zipkin_trace_config",
+    "AllowLessThanFilter",
     "notrace",
     "setup_sentry",
-    "setup_zipkin",
-    "setup_zipkin_tracer",
     "trace",
     "trace_cm",
     "new_sampled_trace",
@@ -39,8 +29,8 @@ __all__ = [
 ]
 
 
-class HideLessThanFilter(logging.Filter):
-    def __init__(self, level: Union[int, str] = logging.ERROR, name: str = ""):
+class AllowLessThanFilter(logging.Filter):
+    def __init__(self, level: t.Union[int, str] = logging.ERROR, name: str = ""):
         super().__init__(name)
         if not isinstance(level, int):
             try:
@@ -53,10 +43,15 @@ class HideLessThanFilter(logging.Filter):
         return record.levelno < self.level
 
 
-if "NP_LOG_LEVEL" in os.environ:
-    _default_log_level = logging.getLevelName(os.environ["NP_LOG_LEVEL"])
-else:
-    _default_log_level = logging.WARNING
+class _HealthCheckFilter(logging.Filter):
+    def __init__(self, url_path: str = "/api/v1/ping", name: str = "") -> None:
+        super().__init__(name)
+        self.url_path = url_path
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if record.levelno > logging.INFO:
+            return True
+        return record.getMessage().find(self.url_path) == -1
 
 
 DEFAULT_CONFIG = {
@@ -66,7 +61,8 @@ DEFAULT_CONFIG = {
         "standard": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"}
     },
     "filters": {
-        "hide_errors": {"()": f"{__name__}.HideLessThanFilter", "level": "ERROR"}
+        "hide_errors": {"()": AllowLessThanFilter, "level": "ERROR"},
+        "hide_health_checks": {"()": _HealthCheckFilter},
     },
     "handlers": {
         "stdout": {
@@ -83,9 +79,28 @@ DEFAULT_CONFIG = {
             "stream": "ext://sys.stderr",
         },
     },
-    "root": {"level": _default_log_level, "handlers": ["stderr", "stdout"]},
+    "root": {
+        "level": logging.DEBUG,
+        "handlers": ["stderr", "stdout"],
+    },
+    "loggers": {
+        "aiohttp.access": {
+            "level": logging.NOTSET,
+            "propagate": True,
+            "filters": ["hide_health_checks"],
+        }
+    },
 }
 
 
-def init_logging(config: dict[str, Any] = DEFAULT_CONFIG) -> None:
-    logging.config.dictConfig(config)
+def init_logging(
+    *,
+    health_check_url_path: str = "/api/v1/ping",
+) -> None:
+    config = EnvironConfigFactory().create_logging()
+    dict_config: dict[str, t.Any] = DEFAULT_CONFIG.copy()
+    dict_config["root"]["level"] = config.log_level
+    if config.log_health_check:
+        dict_config["loggers"].pop("aiohttp.access", None)
+    dict_config["filters"]["hide_health_checks"]["url_path"] = health_check_url_path
+    logging.config.dictConfig(dict_config)

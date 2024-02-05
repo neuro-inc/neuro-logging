@@ -5,11 +5,12 @@ from typing import Any
 
 import pytest
 
-try:
-    os.environ["NP_LOG_LEVEL"] = "NOTSET"
-    from neuro_logging import DEFAULT_CONFIG, HideLessThanFilter, init_logging
-finally:
-    del os.environ["NP_LOG_LEVEL"]
+from neuro_logging import AllowLessThanFilter, init_logging
+
+
+@pytest.fixture(autouse=True)
+def set_log_level() -> None:
+    os.environ["LOG_LEVEL"] = "NOTSET"
 
 
 def _log_all_messages() -> None:
@@ -41,27 +42,31 @@ def test_default_config_output(capsys: Any) -> None:
     assert "CriticalMessage" in captured.err
 
 
-def test_custom_config(capsys: Any) -> None:
-    custom_config = {
-        "version": 1,
-        "disable_existing_loggers": True,
-        "handlers": {
-            "stderr": {"class": "logging.StreamHandler", "level": logging.NOTSET}
-        },
-        "root": {"level": logging.NOTSET, "handlers": ["stderr"]},
-    }
-    init_logging(custom_config)
-    _log_all_messages()
+def test_health_checks_filtered(capsys: Any) -> None:
+    init_logging()
+    logging.getLogger("aiohttp.access").info("InfoMessage")
+    logging.getLogger("aiohttp.access").info("GET /api/v1/ping")
     captured = capsys.readouterr()
-    assert "DebugMessage" in captured.err
-    assert "InfoMessage" in captured.err
-    assert "WarningMessage" in captured.err
-    assert "ErrorMessage" in captured.err
-    assert "CriticalMessage" in captured.err
+    assert "InfoMessage" in captured.out
+    assert "/api/v1/ping" not in captured.out
 
 
-def test_hide_less_filter_usage() -> None:
-    filter = HideLessThanFilter(logging.INFO)
+def test_health_checks_filtered__error(capsys: Any) -> None:
+    init_logging()
+    logging.getLogger("aiohttp.access").error("GET /api/v1/ping")
+    captured = capsys.readouterr()
+    assert "/api/v1/ping" in captured.err
+
+
+def test_health_checks_filtered__custom_url_path(capsys: Any) -> None:
+    init_logging(health_check_url_path="/health")
+    logging.getLogger("aiohttp.access").info("GET /health")
+    captured = capsys.readouterr()
+    assert not captured.out
+
+
+def test_allow_less_filter_usage() -> None:
+    filter = AllowLessThanFilter(logging.INFO)
     record_info = logging.LogRecord("some", logging.INFO, "some", 12, "text", (), None)
     record_debug = logging.LogRecord(
         "some", logging.DEBUG, "some", 12, "text", (), None
@@ -70,12 +75,12 @@ def test_hide_less_filter_usage() -> None:
     assert filter.filter(record_debug) is True
 
 
-def test_hide_less_filter_text_level_names() -> None:
-    filter = HideLessThanFilter("INFO")
+def test_allow_less_filter_text_level_names() -> None:
+    filter = AllowLessThanFilter("INFO")
     assert filter.level == logging.INFO
 
     with pytest.raises(ValueError):
-        HideLessThanFilter("unknown-level")
+        AllowLessThanFilter("unknown-level")
 
 
 def test_existing_loggers_continue_work(capsys: Any) -> None:
@@ -86,19 +91,4 @@ def test_existing_loggers_continue_work(capsys: Any) -> None:
     existing.error("ErrorMessage")
     captured = capsys.readouterr()
     assert "InfoMessage" in captured.out
-    assert "ErrorMessage" in captured.err
-
-
-def test_rewrite_existing_logging(capsys: Any) -> None:
-    existing = logging.getLogger("existing")
-
-    config = dict(DEFAULT_CONFIG)
-    config.update({"loggers": {"existing": {"level": "ERROR"}}})
-    init_logging(config)
-
-    existing.info("InfoMessage")
-    existing.error("ErrorMessage")
-    captured = capsys.readouterr()
-    assert "InfoMessage" not in captured.out
-    assert "InfoMessage" not in captured.err
     assert "ErrorMessage" in captured.err
