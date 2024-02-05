@@ -93,7 +93,7 @@ async def test_sentry_new_trace() -> None:
 
 async def test_sentry_new_trace_multiple_tasks() -> None:
     sentry_sdk.init(traces_sample_rate=1.0)
-    spans: list[Span | None] = []
+    spans: list[t.Optional[Span]] = []
 
     @new_trace
     async def func() -> None:

@@ -156,7 +156,7 @@ def _find_caller_version(stacklevel: int) -> str:
 
 
 def setup_sentry(
-    config: SentryConfig | None = None,
+    config: Optional[SentryConfig] = None,
     *,
     ignore_errors: Iterable[type[BaseException] | str] = (),
 ) -> None:  # pragma: no cover
