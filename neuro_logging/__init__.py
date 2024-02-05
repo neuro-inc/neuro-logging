@@ -30,7 +30,7 @@ __all__ = [
 
 
 class AllowLessThanFilter(logging.Filter):
-    def __init__(self, level: int | str = logging.ERROR, name: str = ""):
+    def __init__(self, level: t.Union[int, str] = logging.ERROR, name: str = ""):
         super().__init__(name)
         if not isinstance(level, int):
             try:
@@ -93,7 +93,7 @@ DEFAULT_CONFIG = {
 }
 
 
-def init_logging(config: LoggingConfig | None = None) -> None:
+def init_logging(config: t.Optional[LoggingConfig] = None) -> None:
     config = config or EnvironConfigFactory().create_logging()
     dict_config: dict[str, t.Any] = DEFAULT_CONFIG.copy()
     dict_config["root"]["level"] = config.log_level

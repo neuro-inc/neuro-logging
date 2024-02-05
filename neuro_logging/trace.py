@@ -4,7 +4,7 @@ import inspect
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Mapping
 from contextlib import asynccontextmanager
 from importlib.metadata import version
-from typing import Any, Optional, TypeVar, cast
+from typing import Any, Optional, TypeVar, Union, cast
 
 import aiohttp
 import sentry_sdk
@@ -158,7 +158,7 @@ def _find_caller_version(stacklevel: int) -> str:
 def setup_sentry(
     config: Optional[SentryConfig] = None,
     *,
-    ignore_errors: Iterable[type[BaseException] | str] = (),
+    ignore_errors: Iterable[Union[type[BaseException], str]] = (),
 ) -> None:  # pragma: no cover
     config = config or EnvironConfigFactory().create_sentry()
     if config is None:
