@@ -12,7 +12,7 @@ from sentry_sdk import Hub
 from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from yarl import URL
 
-from .config import EnvironConfigFactory, SentryConfig
+from .config import EnvironConfigFactory
 
 T = TypeVar("T", bound=Callable[..., Awaitable[Any]])
 
@@ -133,11 +133,11 @@ def notrace(func: T) -> T:
 
 
 def before_send_transaction(
-    event: dict[str, Any], hint: Any, *, health_check_path: str
+    event: dict[str, Any], hint: Any, *, health_check_url_path: str
 ) -> Optional[dict[str, Any]]:
     url = URL(event["request"]["url"])
 
-    if url.path == health_check_path:
+    if url.path == health_check_url_path:
         return None
 
     return event
@@ -156,13 +156,11 @@ def _find_caller_version(stacklevel: int) -> str:
 
 
 def setup_sentry(
-    config: Optional[SentryConfig] = None,
     *,
+    health_check_url_path: str = "/api/v1/ping",
     ignore_errors: Iterable[Union[type[BaseException], str]] = (),
 ) -> None:  # pragma: no cover
-    config = config or EnvironConfigFactory().create_sentry()
-    if config is None:
-        return
+    config = EnvironConfigFactory().create_sentry()
     ignore_errors = tuple(ignore_errors) + (
         asyncio.CancelledError,
         aiohttp.ServerConnectionError,
@@ -174,7 +172,7 @@ def setup_sentry(
         integrations=[AioHttpIntegration(transaction_style="method_and_path_pattern")],
         ignore_errors=ignore_errors,
         before_send_transaction=functools.partial(
-            before_send_transaction, health_check_path=config.health_check_path
+            before_send_transaction, health_check_url_path=health_check_url_path
         ),
         release=_find_caller_version(2),
         environment=config.cluster_name,

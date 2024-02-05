@@ -6,7 +6,6 @@ from typing import Any
 import pytest
 
 from neuro_logging import AllowLessThanFilter, init_logging
-from neuro_logging.config import LoggingConfig
 
 
 @pytest.fixture(autouse=True)
@@ -60,7 +59,7 @@ def test_health_checks_filtered__error(capsys: Any) -> None:
 
 
 def test_health_checks_filtered__custom_url_path(capsys: Any) -> None:
-    init_logging(LoggingConfig(health_check_url_path="/health"))
+    init_logging(health_check_url_path="/health")
     logging.getLogger("aiohttp.access").info("GET /health")
     captured = capsys.readouterr()
     assert not captured.out

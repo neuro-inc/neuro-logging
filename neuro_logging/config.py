@@ -9,7 +9,6 @@ from dataclasses import dataclass
 class LoggingConfig:
     log_level: int = logging.INFO
     log_health_check: bool = False
-    health_check_url_path: str = "/api/v1/ping"
 
 
 @dataclass(frozen=True)
@@ -18,7 +17,6 @@ class SentryConfig:
     cluster_name: str | None = None
     app_name: str | None = None
     sample_rate: float = 0.1
-    health_check_path: str = "/api/v1/ping"
 
 
 def _to_bool(value: str) -> bool:
@@ -38,9 +36,6 @@ class EnvironConfigFactory:
                 ).upper()
             ),
             log_health_check=_to_bool(self._environ.get("LOG_HEALTH_CHECK", "0")),
-            health_check_url_path=self._environ.get(
-                "LOG_HEALTH_CHECK_URL_PATH", LoggingConfig.health_check_url_path
-            ),
         )
 
     def create_sentry(self) -> SentryConfig:
@@ -52,8 +47,5 @@ class EnvironConfigFactory:
             app_name=self._environ.get("SENTRY_APP_NAME", SentryConfig.app_name),
             sample_rate=float(
                 self._environ.get("SENTRY_SAMPLE_RATE", SentryConfig.sample_rate)
-            ),
-            health_check_path=self._environ.get(
-                "SENTRY_HEALTH_CHECK_PATH", SentryConfig.health_check_path
             ),
         )

@@ -3,7 +3,7 @@ import logging.config
 import typing as t
 from importlib.metadata import version
 
-from .config import EnvironConfigFactory, LoggingConfig
+from .config import EnvironConfigFactory
 from .trace import (
     new_sampled_trace,
     new_trace,
@@ -93,13 +93,14 @@ DEFAULT_CONFIG = {
 }
 
 
-def init_logging(config: t.Optional[LoggingConfig] = None) -> None:
-    config = config or EnvironConfigFactory().create_logging()
+def init_logging(
+    *,
+    health_check_url_path: str = "/api/v1/ping",
+) -> None:
+    config = EnvironConfigFactory().create_logging()
     dict_config: dict[str, t.Any] = DEFAULT_CONFIG.copy()
     dict_config["root"]["level"] = config.log_level
     if config.log_health_check:
         dict_config["loggers"].pop("aiohttp.access", None)
-    dict_config["filters"]["hide_health_checks"][
-        "url_path"
-    ] = config.health_check_url_path
+    dict_config["filters"]["hide_health_checks"]["url_path"] = health_check_url_path
     logging.config.dictConfig(dict_config)
