@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import inspect
+import logging
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Mapping
 from contextlib import asynccontextmanager
 from importlib.metadata import version
@@ -13,6 +14,9 @@ from sentry_sdk.integrations.aiohttp import AioHttpIntegration
 from yarl import URL
 
 from .config import EnvironConfigFactory
+
+LOGGER = logging.getLogger(__name__)
+
 
 T = TypeVar("T", bound=Callable[..., Awaitable[Any]])
 
@@ -161,6 +165,7 @@ def setup_sentry(
     ignore_errors: Iterable[Union[type[BaseException], str]] = (),
 ) -> None:  # pragma: no cover
     config = EnvironConfigFactory().create_sentry()
+    LOGGER.info("Loaded Sentry config: %s", config)
     ignore_errors = tuple(ignore_errors) + (
         asyncio.CancelledError,
         aiohttp.ServerConnectionError,
