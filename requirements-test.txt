@@ -1,7 +1,7 @@
 -e .
 mypy==1.8.0
 mypy-extensions==1.0.0
-pre-commit==3.6.0
+pre-commit==3.6.1
 pytest==7.4.4
 pytest-aiohttp
 pytest-asyncio
