@@ -21,11 +21,13 @@ from neuro_logging.trace import (
 def sentry_transaction() -> t.Iterator[None]:
     sentry_sdk.init(traces_sample_rate=1.0)
     hub = sentry_sdk.Hub.current
-    with sentry_sdk.Hub(hub) as hub:
-        with hub.start_transaction(
+    with (
+        sentry_sdk.Hub(hub) as hub,
+        hub.start_transaction(
             Transaction(name="test", hub=hub, parent_sampled=True, sampled=True)
-        ):
-            yield
+        ),
+    ):
+        yield
 
 
 @pytest.mark.usefixtures("sentry_transaction")
