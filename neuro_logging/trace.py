@@ -165,7 +165,11 @@ def setup_sentry(
     ignore_errors: Iterable[Union[type[BaseException], str]] = (),
 ) -> None:  # pragma: no cover
     config = EnvironConfigFactory().create_sentry()
-    LOGGER.info("Loaded Sentry config: %s", config)
+    if config.dsn:
+        LOGGER.info("Loaded Sentry config: %s", config)
+    else:
+        LOGGER.warning("Sentry DSN is not configured, skipping Sentry setup.")
+        return
     ignore_errors = tuple(ignore_errors) + (
         asyncio.CancelledError,
         aiohttp.ServerConnectionError,
