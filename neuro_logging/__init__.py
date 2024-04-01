@@ -88,7 +88,12 @@ DEFAULT_CONFIG = {
             "level": logging.NOTSET,
             "propagate": True,
             "filters": ["hide_health_checks"],
-        }
+        },
+        "uvicorn.access": {
+            "level": logging.NOTSET,
+            "propagate": True,
+            "filters": ["hide_health_checks"],
+        },
     },
 }
 
