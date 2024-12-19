@@ -146,14 +146,14 @@ def test_find_caller_version() -> None:
 def test_sentry_before_send_transaction() -> None:
     event = before_send_transaction(
         {"request": {"url": "http://127.0.0.1/api/v1/ping"}},
-        None,
+        {},
         health_check_url_path="/api/v1/ping",
     )
     assert event is None
 
     event = before_send_transaction(
         {"request": {"url": "http://127.0.0.1/api/v1/jobs"}},
-        None,
+        {},
         health_check_url_path="/api/v1/ping",
     )
     assert event is not None
