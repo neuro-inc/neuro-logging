@@ -73,7 +73,7 @@ jobs:
       with:
         jobs: ${{ toJSON(needs) }}
     - name: Upload coverage
-      uses: neuro-inc/upload-coverage@v21.9.4
+      uses: neuro-inc/upload-coverage@v24.10.1
   deploy:
     name: Release client
     runs-on: ubuntu-latest
