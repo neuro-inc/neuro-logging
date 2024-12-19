@@ -60,8 +60,6 @@ jobs:
       run: make test
     - name: Upload coverage artifact
       uses: aio-libs/prepare-coverage@v24.9.2
-      with:
-        file: './.coverage'
   check:  # The branch protection check
     if: always()
     needs: [lint, test]
