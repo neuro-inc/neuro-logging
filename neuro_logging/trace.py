@@ -53,7 +53,7 @@ async def sentry_trace_cm(
     tags: Optional[Mapping[str, str]] = None,
     data: Optional[Mapping[str, Any]] = None,
 ) -> AsyncIterator[Optional[sentry_sdk.tracing.Span]]:
-    with Hub(Hub.current) as hub, hub.start_span(op="call", description=name) as child:
+    with Hub(Hub.current) as hub, hub.start_span(op="call", name=name) as child:
         if tags:
             for key, value in tags.items():
                 child.set_tag(key, value)
