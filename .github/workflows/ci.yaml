@@ -59,10 +59,9 @@ jobs:
     - name: Run tests
       run: make test
     - name: Upload coverage artifact
-      uses: neuro-inc/prepare-coverage@v24.9.2
+      uses: aio-libs/prepare-coverage@v24.9.2
       with:
         file: './.coverage.xml'
-        key: unit-${{ matrix.python-version }}
   check:  # The branch protection check
     if: always()
     needs: [lint, test]
@@ -73,7 +72,7 @@ jobs:
       with:
         jobs: ${{ toJSON(needs) }}
     - name: Upload coverage
-      uses: neuro-inc/upload-coverage@v24.10.1
+      uses: aio-libs/upload-coverage@v24.10.1
   deploy:
     name: Release client
     runs-on: ubuntu-latest
