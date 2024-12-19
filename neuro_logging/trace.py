@@ -54,22 +54,21 @@ async def sentry_trace_cm(
     tags: Optional[Mapping[str, str]] = None,
     data: Optional[Mapping[str, Any]] = None,
 ) -> AsyncIterator[Optional[sentry_sdk.tracing.Span]]:
-    with Hub(Hub.current) as hub:
-        with hub.start_span(op="call", description=name) as child:
-            if tags:
-                for key, value in tags.items():
-                    child.set_tag(key, value)
-            if data:
-                for key, value in data.items():
-                    child.set_data(key, value)
-            try:
-                yield child
-            except asyncio.CancelledError:
-                child.set_status("cancelled")
-                raise
-            except Exception as exc:
-                hub.capture_exception(error=exc)
-                raise
+    with Hub(Hub.current) as hub, hub.start_span(op="call", description=name) as child:
+        if tags:
+            for key, value in tags.items():
+                child.set_tag(key, value)
+        if data:
+            for key, value in data.items():
+                child.set_data(key, value)
+        try:
+            yield child
+        except asyncio.CancelledError:
+            child.set_status("cancelled")
+            raise
+        except Exception as exc:
+            hub.capture_exception(error=exc)
+            raise
 
 
 @asynccontextmanager
