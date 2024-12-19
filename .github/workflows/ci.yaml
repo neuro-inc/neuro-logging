@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.10']
+        python-version: ['3.9', '3.10', '3.11', '3.12', '3.13']
     steps:
     - name: Checkout commit
       uses: actions/checkout@v4
@@ -59,10 +59,7 @@ jobs:
     - name: Run tests
       run: make test
     - name: Upload coverage artifact
-      uses: neuro-inc/prepare-coverage@v24.9.2
-      with:
-        file: './.coverage.xml'
-        key: unit-${{ matrix.python-version }}
+      uses: aio-libs/prepare-coverage@v24.9.2
   check:  # The branch protection check
     if: always()
     needs: [lint, test]
@@ -72,8 +69,10 @@ jobs:
       uses: re-actors/alls-green@release/v1
       with:
         jobs: ${{ toJSON(needs) }}
+    - name: Checkout commit
+      uses: actions/checkout@v4
     - name: Upload coverage
-      uses: neuro-inc/upload-coverage@v24.10.1
+      uses: aio-libs/upload-coverage@v24.10.1
   deploy:
     name: Release client
     runs-on: ubuntu-latest
