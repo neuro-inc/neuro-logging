@@ -42,7 +42,7 @@ async def new_sentry_trace_cm(
 
 
 @asynccontextmanager
-async def new_trace_cm(name: str, sampled: bool) -> AsyncIterator[None]:
+async def new_trace_cm(name: str, sampled: bool = False) -> AsyncIterator[None]:
     async with new_sentry_trace_cm(name, sampled):
         yield
 
@@ -97,7 +97,7 @@ def trace(func: T) -> T:
 def new_trace(func: T) -> T:
     async def _tracer(*args: Any, **kwargs: Any) -> Any:
         name = func.__qualname__
-        async with new_trace_cm(name, sampled=False):
+        async with new_trace_cm(name):
             return await func(*args, **kwargs)
 
     @functools.wraps(func)
