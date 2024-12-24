@@ -6,7 +6,7 @@ from typing import Any
 from unittest import mock
 
 import pytest
-from dirty_equals import IsList, IsNow, IsPositiveInt, IsStr
+from dirty_equals import IsDict, IsList, IsNow, IsPositiveInt, IsStr
 
 from neuro_logging import AllowLessThanFilter, init_logging
 
@@ -104,27 +104,28 @@ def test_json_logging_with_extra(capsys: Any, monkeypatch: Any) -> None:
     captured = capsys.readouterr()
     assert not captured.err
     msg = json.loads(captured.out)
-    assert msg == {
-        "args": [],
-        "exc_info": None,
-        "exc_text": None,
-        "filename": "test_logging.py",
-        "funcName": "test_json_logging_with_extra",
-        "key": "first",
-        "lineno": IsPositiveInt(),
-        "logName": "root",
-        "message": "msg",
-        "module": "test_logging",
-        "pathname": mock.ANY,
-        "process": IsPositiveInt(),
-        "processName": "MainProcess",
-        "severity": "DEBUG",
-        "stack_info": None,
-        "taskName": None,
-        "thread": IsPositiveInt(),
-        "threadName": "MainThread",
-        "timestamp": mock.ANY,
-    }
+    assert msg == IsDict(
+        {
+            "args": [],
+            "exc_info": None,
+            "exc_text": None,
+            "filename": "test_logging.py",
+            "funcName": "test_json_logging_with_extra",
+            "key": "first",
+            "lineno": IsPositiveInt(),
+            "logName": "root",
+            "message": "msg",
+            "module": "test_logging",
+            "pathname": mock.ANY,
+            "process": IsPositiveInt(),
+            "processName": "MainProcess",
+            "severity": "DEBUG",
+            "stack_info": None,
+            "thread": IsPositiveInt(),
+            "threadName": "MainThread",
+            "timestamp": mock.ANY,
+        }
+    )
 
 
 def test_json_logging_with_args(capsys: Any, monkeypatch: Any) -> None:
@@ -134,26 +135,27 @@ def test_json_logging_with_args(capsys: Any, monkeypatch: Any) -> None:
     captured = capsys.readouterr()
     assert not captured.err
     msg = json.loads(captured.out)
-    assert msg == {
-        "args": ["arg"],
-        "exc_info": None,
-        "exc_text": None,
-        "filename": "test_logging.py",
-        "funcName": "test_json_logging_with_args",
-        "lineno": IsPositiveInt(),
-        "logName": "root",
-        "message": "arg msg",
-        "module": "test_logging",
-        "pathname": mock.ANY,
-        "process": IsPositiveInt(),
-        "processName": "MainProcess",
-        "severity": "DEBUG",
-        "stack_info": None,
-        "taskName": None,
-        "thread": IsPositiveInt(),
-        "threadName": "MainThread",
-        "timestamp": IsNow(tz="UTC", iso_string=True),
-    }
+    assert msg == IsDict(
+        {
+            "args": ["arg"],
+            "exc_info": None,
+            "exc_text": None,
+            "filename": "test_logging.py",
+            "funcName": "test_json_logging_with_args",
+            "lineno": IsPositiveInt(),
+            "logName": "root",
+            "message": "arg msg",
+            "module": "test_logging",
+            "pathname": mock.ANY,
+            "process": IsPositiveInt(),
+            "processName": "MainProcess",
+            "severity": "DEBUG",
+            "stack_info": None,
+            "thread": IsPositiveInt(),
+            "threadName": "MainThread",
+            "timestamp": IsNow(tz="UTC", iso_string=True),
+        }
+    )
 
 
 def test_json_logging_with_exc_info(capsys: Any, monkeypatch: Any) -> None:
@@ -166,30 +168,31 @@ def test_json_logging_with_exc_info(capsys: Any, monkeypatch: Any) -> None:
     captured = capsys.readouterr()
     assert not captured.err
     msg = json.loads(captured.out)
-    assert msg == {
-        "args": ["arg"],
-        "exc_info": IsList(
-            "ZeroDivisionError",
-            "ZeroDivisionError: division by zero",
-            length=3,
-        ),
-        "exc_text": None,
-        "filename": "test_logging.py",
-        "funcName": "test_json_logging_with_exc_info",
-        "lineno": IsPositiveInt(),
-        "logName": "root",
-        "message": "arg msg",
-        "module": "test_logging",
-        "pathname": mock.ANY,
-        "process": IsPositiveInt(),
-        "processName": "MainProcess",
-        "severity": "DEBUG",
-        "stack_info": None,
-        "taskName": None,
-        "thread": IsPositiveInt(),
-        "threadName": "MainThread",
-        "timestamp": IsNow(tz="UTC", iso_string=True),
-    }
+    assert msg == IsDict(
+        {
+            "args": ["arg"],
+            "exc_info": IsList(
+                "ZeroDivisionError",
+                "ZeroDivisionError: division by zero",
+                length=3,
+            ),
+            "exc_text": None,
+            "filename": "test_logging.py",
+            "funcName": "test_json_logging_with_exc_info",
+            "lineno": IsPositiveInt(),
+            "logName": "root",
+            "message": "arg msg",
+            "module": "test_logging",
+            "pathname": mock.ANY,
+            "process": IsPositiveInt(),
+            "processName": "MainProcess",
+            "severity": "DEBUG",
+            "stack_info": None,
+            "thread": IsPositiveInt(),
+            "threadName": "MainThread",
+            "timestamp": IsNow(tz="UTC", iso_string=True),
+        }
+    )
 
 
 def test_json_logging_with_stack_info(capsys: Any, monkeypatch: Any) -> None:
@@ -199,24 +202,26 @@ def test_json_logging_with_stack_info(capsys: Any, monkeypatch: Any) -> None:
     captured = capsys.readouterr()
     assert not captured.err
     msg = json.loads(captured.out)
-    assert msg == {
-        "args": ["arg"],
-        "exc_info": None,
-        "exc_text": None,
-        "filename": "test_logging.py",
-        "funcName": "test_json_logging_with_stack_info",
-        "lineno": IsPositiveInt(),
-        "logName": "root",
-        "message": "arg msg",
-        "module": "test_logging",
-        "pathname": mock.ANY,
-        "process": IsPositiveInt(),
-        "processName": "MainProcess",
-        "severity": "DEBUG",
-        "stack_info": IsStr(),
-        "taskName": None,
-        "thread": IsPositiveInt(),
-        "threadName": "MainThread",
-        "timestamp": IsNow(tz="UTC", iso_string=True),
-    }
+    assert msg == IsDict(
+        {
+            "args": ["arg"],
+            "exc_info": None,
+            "exc_text": None,
+            "filename": "test_logging.py",
+            "funcName": "test_json_logging_with_stack_info",
+            "lineno": IsPositiveInt(),
+            "logName": "root",
+            "message": "arg msg",
+            "module": "test_logging",
+            "pathname": mock.ANY,
+            "process": IsPositiveInt(),
+            "processName": "MainProcess",
+            "severity": "DEBUG",
+            "stack_info": IsStr(),
+            "taskName": None,
+            "thread": IsPositiveInt(),
+            "threadName": "MainThread",
+            "timestamp": IsNow(tz="UTC", iso_string=True),
+        }
+    )
     assert msg["stack_info"].startswith("Stack (most recent call last):\n")
