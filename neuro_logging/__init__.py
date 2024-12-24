@@ -64,7 +64,14 @@ BASE_CONFIG = {
         "standard": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"},
         "json": {
             "()": OrjsonFormatter,
-            "reserved_attrs": ["created", "levelno", "msecs", "msg", "relativeCreated"],
+            "reserved_attrs": [
+                "created",
+                "exc_text",
+                "levelno",
+                "msecs",
+                "msg",
+                "relativeCreated",
+            ],
             "rename_fields": {
                 "name": "logName",
                 "levelname": "severity",

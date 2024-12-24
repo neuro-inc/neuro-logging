@@ -108,7 +108,6 @@ def test_json_logging_with_extra(capsys: Any, monkeypatch: Any) -> None:
         {
             "args": [],
             "exc_info": None,
-            "exc_text": None,
             "filename": "test_logging.py",
             "funcName": "test_json_logging_with_extra",
             "key": "first",
@@ -139,7 +138,6 @@ def test_json_logging_with_args(capsys: Any, monkeypatch: Any) -> None:
         {
             "args": ["arg"],
             "exc_info": None,
-            "exc_text": None,
             "filename": "test_logging.py",
             "funcName": "test_json_logging_with_args",
             "lineno": IsPositiveInt(),
@@ -176,7 +174,6 @@ def test_json_logging_with_exc_info(capsys: Any, monkeypatch: Any) -> None:
                 "ZeroDivisionError: division by zero",
                 length=3,
             ),
-            "exc_text": None,
             "filename": "test_logging.py",
             "funcName": "test_json_logging_with_exc_info",
             "lineno": IsPositiveInt(),
@@ -206,7 +203,6 @@ def test_json_logging_with_stack_info(capsys: Any, monkeypatch: Any) -> None:
         {
             "args": ["arg"],
             "exc_info": None,
-            "exc_text": None,
             "filename": "test_logging.py",
             "funcName": "test_json_logging_with_stack_info",
             "lineno": IsPositiveInt(),
