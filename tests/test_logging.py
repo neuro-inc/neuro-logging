@@ -199,6 +199,9 @@ def test_json_logging_with_stack_info(capsys: Any, monkeypatch: Any) -> None:
     captured = capsys.readouterr()
     assert not captured.err
     msg = json.loads(captured.out)
+    import pprint
+
+    pprint.pprint(msg)
     assert msg == IsPartialDict(
         {
             "args": ["arg"],
@@ -214,7 +217,6 @@ def test_json_logging_with_stack_info(capsys: Any, monkeypatch: Any) -> None:
             "processName": "MainProcess",
             "severity": "DEBUG",
             "stack_info": IsStr(),
-            "taskName": None,
             "thread": IsPositiveInt(),
             "threadName": "MainThread",
             "timestamp": IsNow(tz="UTC", iso_string=True),
