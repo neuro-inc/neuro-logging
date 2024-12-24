@@ -170,7 +170,8 @@ def test_json_logging_with_exc_info(capsys: Any, monkeypatch: Any) -> None:
         "args": ["arg"],
         "exc_info": IsList(
             "ZeroDivisionError",
-            length=...,
+            "ZeroDivisionError: division by zero",
+            length=3,
         ),
         "exc_text": None,
         "filename": "test_logging.py",
