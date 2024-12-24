@@ -1,7 +1,10 @@
 import logging
 import logging.config
+import os
 import typing as t
 from importlib.metadata import version
+
+from pythonjsonlogger.orjson import OrjsonFormatter
 
 from .config import EnvironConfigFactory
 from .trace import (
@@ -54,11 +57,28 @@ class _HealthCheckFilter(logging.Filter):
         return record.getMessage().find(self.url_path) == -1
 
 
-DEFAULT_CONFIG = {
+BASE_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {
-        "standard": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"}
+        "standard": {"format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s"},
+        "json": {
+            "()": OrjsonFormatter,
+            "reserved_attrs": [
+                "created",
+                "exc_text",
+                "levelno",
+                "msecs",
+                "msg",
+                "relativeCreated",
+            ],
+            "rename_fields": {
+                "name": "logName",
+                "levelname": "severity",
+                "extra": "jsonPayload",
+            },
+            "timestamp": True,
+        },
     },
     "filters": {
         "hide_errors": {"()": AllowLessThanFilter, "level": "ERROR"},
@@ -78,10 +98,12 @@ DEFAULT_CONFIG = {
             "formatter": "standard",
             "stream": "ext://sys.stderr",
         },
-    },
-    "root": {
-        "level": logging.DEBUG,
-        "handlers": ["stderr", "stdout"],
+        "json": {
+            "class": "logging.StreamHandler",
+            "level": "DEBUG",
+            "formatter": "json",
+            "stream": "ext://sys.stdout",
+        },
     },
     "loggers": {
         "aiohttp.access": {
@@ -98,14 +120,34 @@ DEFAULT_CONFIG = {
 }
 
 
+TEXT_CONFIG = BASE_CONFIG | {
+    "root": {
+        "level": logging.DEBUG,
+        "handlers": ["stderr", "stdout"],
+    },
+}
+
+JSON_CONFIG = BASE_CONFIG | {
+    "root": {
+        "level": logging.DEBUG,
+        "handlers": ["json"],
+    },
+}
+
+
 def init_logging(
     *,
     health_check_url_path: str = "/api/v1/ping",
 ) -> None:
     config = EnvironConfigFactory().create_logging()
-    dict_config: dict[str, t.Any] = DEFAULT_CONFIG.copy()
+    if "PYTEST_VERSION" in os.environ:
+        config_template = TEXT_CONFIG
+    else:
+        config_template = JSON_CONFIG
+    dict_config: dict[str, t.Any] = config_template.copy()
     dict_config["root"]["level"] = config.log_level
     if config.log_health_check:
         dict_config["loggers"].pop("aiohttp.access", None)
+        dict_config["loggers"].pop("uvicorn.access", None)
     dict_config["filters"]["hide_health_checks"]["url_path"] = health_check_url_path
     logging.config.dictConfig(dict_config)

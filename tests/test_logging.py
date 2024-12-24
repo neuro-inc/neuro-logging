@@ -1,9 +1,12 @@
+import json
 import logging
 import os
 import re
 from typing import Any
+from unittest import mock
 
 import pytest
+from dirty_equals import IsList, IsNow, IsPartialDict, IsPositiveInt, IsStr
 
 from neuro_logging import AllowLessThanFilter, init_logging
 
@@ -92,3 +95,131 @@ def test_existing_loggers_continue_work(capsys: Any) -> None:
     captured = capsys.readouterr()
     assert "InfoMessage" in captured.out
     assert "ErrorMessage" in captured.err
+
+
+def test_json_logging_with_extra(capsys: Any, monkeypatch: Any) -> None:
+    monkeypatch.delenv("PYTEST_VERSION")
+    init_logging()
+    logging.debug("msg", extra={"key": "first"})
+    captured = capsys.readouterr()
+    assert not captured.err
+    msg = json.loads(captured.out)
+    assert msg == IsPartialDict(
+        {
+            "args": [],
+            "exc_info": None,
+            "filename": "test_logging.py",
+            "funcName": "test_json_logging_with_extra",
+            "key": "first",
+            "lineno": IsPositiveInt(),
+            "logName": "root",
+            "message": "msg",
+            "module": "test_logging",
+            "pathname": mock.ANY,
+            "process": IsPositiveInt(),
+            "processName": "MainProcess",
+            "severity": "DEBUG",
+            "stack_info": None,
+            "thread": IsPositiveInt(),
+            "threadName": "MainThread",
+            "timestamp": mock.ANY,
+        }
+    )
+
+
+def test_json_logging_with_args(capsys: Any, monkeypatch: Any) -> None:
+    monkeypatch.delenv("PYTEST_VERSION")
+    init_logging()
+    logging.debug("%s msg", "arg")
+    captured = capsys.readouterr()
+    assert not captured.err
+    msg = json.loads(captured.out)
+    assert msg == IsPartialDict(
+        {
+            "args": ["arg"],
+            "exc_info": None,
+            "filename": "test_logging.py",
+            "funcName": "test_json_logging_with_args",
+            "lineno": IsPositiveInt(),
+            "logName": "root",
+            "message": "arg msg",
+            "module": "test_logging",
+            "pathname": mock.ANY,
+            "process": IsPositiveInt(),
+            "processName": "MainProcess",
+            "severity": "DEBUG",
+            "stack_info": None,
+            "thread": IsPositiveInt(),
+            "threadName": "MainThread",
+            "timestamp": IsNow(tz="UTC", iso_string=True),
+        }
+    )
+
+
+def test_json_logging_with_exc_info(capsys: Any, monkeypatch: Any) -> None:
+    monkeypatch.delenv("PYTEST_VERSION")
+    init_logging()
+    try:
+        1 / 0
+    except ZeroDivisionError:
+        logging.debug("%s msg", "arg", exc_info=True)
+    captured = capsys.readouterr()
+    assert not captured.err
+    msg = json.loads(captured.out)
+    assert msg == IsPartialDict(
+        {
+            "args": ["arg"],
+            "exc_info": IsList(
+                "ZeroDivisionError",
+                "ZeroDivisionError: division by zero",
+                length=3,
+            ),
+            "filename": "test_logging.py",
+            "funcName": "test_json_logging_with_exc_info",
+            "lineno": IsPositiveInt(),
+            "logName": "root",
+            "message": "arg msg",
+            "module": "test_logging",
+            "pathname": mock.ANY,
+            "process": IsPositiveInt(),
+            "processName": "MainProcess",
+            "severity": "DEBUG",
+            "stack_info": None,
+            "thread": IsPositiveInt(),
+            "threadName": "MainThread",
+            "timestamp": IsNow(tz="UTC", iso_string=True),
+        }
+    )
+
+
+def test_json_logging_with_stack_info(capsys: Any, monkeypatch: Any) -> None:
+    monkeypatch.delenv("PYTEST_VERSION")
+    init_logging()
+    logging.debug("%s msg", "arg", stack_info=True)
+    captured = capsys.readouterr()
+    assert not captured.err
+    msg = json.loads(captured.out)
+    import pprint
+
+    pprint.pprint(msg)
+    assert msg == IsPartialDict(
+        {
+            "args": ["arg"],
+            "exc_info": None,
+            "filename": "test_logging.py",
+            "funcName": "test_json_logging_with_stack_info",
+            "lineno": IsPositiveInt(),
+            "logName": "root",
+            "message": "arg msg",
+            "module": "test_logging",
+            "pathname": mock.ANY,
+            "process": IsPositiveInt(),
+            "processName": "MainProcess",
+            "severity": "DEBUG",
+            "stack_info": IsStr(),
+            "thread": IsPositiveInt(),
+            "threadName": "MainThread",
+            "timestamp": IsNow(tz="UTC", iso_string=True),
+        }
+    )
+    assert msg["stack_info"].startswith("Stack (most recent call last):\n")
