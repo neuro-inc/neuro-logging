@@ -6,7 +6,7 @@ from typing import Any
 from unittest import mock
 
 import pytest
-from dirty_equals import IsDict, IsList, IsNow, IsPositiveInt, IsStr
+from dirty_equals import IsList, IsNow, IsPartialDict, IsPositiveInt, IsStr
 
 from neuro_logging import AllowLessThanFilter, init_logging
 
@@ -104,7 +104,7 @@ def test_json_logging_with_extra(capsys: Any, monkeypatch: Any) -> None:
     captured = capsys.readouterr()
     assert not captured.err
     msg = json.loads(captured.out)
-    assert msg == IsDict(
+    assert msg == IsPartialDict(
         {
             "args": [],
             "exc_info": None,
@@ -135,7 +135,7 @@ def test_json_logging_with_args(capsys: Any, monkeypatch: Any) -> None:
     captured = capsys.readouterr()
     assert not captured.err
     msg = json.loads(captured.out)
-    assert msg == IsDict(
+    assert msg == IsPartialDict(
         {
             "args": ["arg"],
             "exc_info": None,
@@ -168,7 +168,7 @@ def test_json_logging_with_exc_info(capsys: Any, monkeypatch: Any) -> None:
     captured = capsys.readouterr()
     assert not captured.err
     msg = json.loads(captured.out)
-    assert msg == IsDict(
+    assert msg == IsPartialDict(
         {
             "args": ["arg"],
             "exc_info": IsList(
@@ -202,7 +202,7 @@ def test_json_logging_with_stack_info(capsys: Any, monkeypatch: Any) -> None:
     captured = capsys.readouterr()
     assert not captured.err
     msg = json.loads(captured.out)
-    assert msg == IsDict(
+    assert msg == IsPartialDict(
         {
             "args": ["arg"],
             "exc_info": None,
