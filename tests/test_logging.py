@@ -54,6 +54,17 @@ def test_health_checks_filtered(capsys: Any) -> None:
     assert "/api/v1/ping" not in captured.out
 
 
+def test_multiple_health_checks_filtered(capsys: Any) -> None:
+    init_logging(health_check_url_path=("/ping1", "/ping2"))
+    logging.getLogger("aiohttp.access").info("InfoMessage")
+    logging.getLogger("aiohttp.access").info("GET /ping1")
+    logging.getLogger("aiohttp.access").info("GET /ping2")
+    captured = capsys.readouterr()
+    assert "InfoMessage" in captured.out
+    assert "/ping1" not in captured.out
+    assert "/ping2" not in captured.out
+
+
 def test_health_checks_filtered__error(capsys: Any) -> None:
     init_logging()
     logging.getLogger("aiohttp.access").error("GET /api/v1/ping")
