@@ -1,8 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 import functools
 import inspect
 import logging
-from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Mapping
+from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Mapping, Set
 from contextlib import asynccontextmanager
 from importlib.metadata import version
 from typing import Any, Optional, TypeVar, Union, cast
@@ -34,9 +36,6 @@ async def new_sentry_trace_cm(
             except asyncio.CancelledError:
                 transaction.set_status("cancelled")
                 raise
-            except Exception as exc:
-                scope.capture_exception(error=exc)
-                raise
 
 
 @asynccontextmanager
@@ -62,9 +61,6 @@ async def sentry_trace_cm(
             yield child
         except asyncio.CancelledError:
             child.set_status("cancelled")
-            raise
-        except Exception as exc:
-            sentry_sdk.get_current_scope().capture_exception(error=exc)
             raise
 
 
@@ -133,11 +129,11 @@ def notrace(func: T) -> T:
 
 
 def before_send_transaction(
-    event: Event, hint: Hint, *, health_check_url_path: str
+    event: Event, hint: Hint, *, health_check_url_paths: Set[str]
 ) -> Optional[Event]:
     url = URL(event["request"]["url"])  # type: ignore[arg-type]
 
-    if url.path == health_check_url_path:
+    if url.path in health_check_url_paths:
         return None
 
     return event
@@ -157,7 +153,7 @@ def _find_caller_version(stacklevel: int) -> str:
 
 def setup_sentry(
     *,
-    health_check_url_path: str = "/api/v1/ping",
+    health_check_url_path: Union[str, tuple[str]] = "/api/v1/ping",
     ignore_errors: Iterable[Union[type[BaseException], str]] = (),
 ) -> None:  # pragma: no cover
     config = EnvironConfigFactory().create_sentry()
@@ -171,13 +167,18 @@ def setup_sentry(
         aiohttp.ServerConnectionError,
         ConnectionResetError,
     )
+    if isinstance(health_check_url_path, str):
+        health_check_url_path = (health_check_url_path,)
+
+    health_check_url_path = set(health_check_url_path)
+
     sentry_sdk.init(
         dsn=str(config.dsn) or None,
         traces_sample_rate=config.sample_rate,
         integrations=[AioHttpIntegration(transaction_style="method_and_path_pattern")],
         ignore_errors=ignore_errors,
         before_send_transaction=functools.partial(
-            before_send_transaction, health_check_url_path=health_check_url_path
+            before_send_transaction, health_check_url_paths=health_check_url_path
         ),
         release=_find_caller_version(2),
         environment=config.cluster_name,

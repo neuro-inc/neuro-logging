@@ -47,14 +47,19 @@ class AllowLessThanFilter(logging.Filter):
 
 
 class _HealthCheckFilter(logging.Filter):
-    def __init__(self, url_path: str = "/api/v1/ping", name: str = "") -> None:
+    def __init__(
+        self,
+        url_paths: t.Tuple[str],
+        name: str = "",
+    ) -> None:
         super().__init__(name)
-        self.url_path = url_path
+        self.url_paths = url_paths
 
     def filter(self, record: logging.LogRecord) -> bool:
         if record.levelno > logging.INFO:
             return True
-        return record.getMessage().find(self.url_path) == -1
+        message = record.getMessage()
+        return all(message.find(url_path) == -1 for url_path in self.url_paths)
 
 
 BASE_CONFIG = {
@@ -137,7 +142,7 @@ JSON_CONFIG = BASE_CONFIG | {
 
 def init_logging(
     *,
-    health_check_url_path: str = "/api/v1/ping",
+    health_check_url_path: t.Union[str, t.Tuple[str, ...]] = "/api/v1/ping",
 ) -> None:
     config = EnvironConfigFactory().create_logging()
     if "PYTEST_VERSION" in os.environ:
@@ -149,5 +154,7 @@ def init_logging(
     if config.log_health_check:
         dict_config["loggers"].pop("aiohttp.access", None)
         dict_config["loggers"].pop("uvicorn.access", None)
-    dict_config["filters"]["hide_health_checks"]["url_path"] = health_check_url_path
+    if isinstance(health_check_url_path, str):
+        health_check_url_path = (health_check_url_path,)
+    dict_config["filters"]["hide_health_checks"]["url_paths"] = health_check_url_path
     logging.config.dictConfig(dict_config)
