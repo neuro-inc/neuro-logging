@@ -82,7 +82,7 @@ def test_allow_less_filter_text_level_names() -> None:
     filter = AllowLessThanFilter("INFO")
     assert filter.level == logging.INFO
 
-    with pytest.raises(ValueError, match="asd"):
+    with pytest.raises(ValueError, match="unknown-level"):
         AllowLessThanFilter("unknown-level")
 
 
