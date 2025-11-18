@@ -1,26 +1,29 @@
-SHELL := /bin/bash
+.PHONY: all
+all: setup lint test
 
-ISORT_TARGETS := neuro_logging tests
-BLACK_TARGETS := $(ISORT_TARGETS)
-MYPY_TARGETS :=  $(ISORT_TARGETS)
-FLAKE8_TARGETS:= $(ISORT_TARGETS)
-
-
+.PHONY: setup
 setup:
-	pip install -U pip
-	pip install -r requirements-test.txt
-	pre-commit install
+	uv sync --dev
+	uv run pre-commit install
 
+.PHONY: format
 format:
 ifdef CI
-	pre-commit run --all-files --show-diff-on-failure
+	uv run pre-commit run --all-files --show-diff-on-failure
 else
-	pre-commit run --all-files
+	uv run pre-commit run --all-files
 endif
 
 
+.PHONY: lint
 lint: format
-	mypy $(MYPY_TARGETS)
+	uv run mypy
 
+.PHONY: test
 test:
-	pytest --cov=neuro_logging --cov-report xml:.coverage.xml tests
+	uv run pytest --cov=neuro_logging --cov-report xml:.coverage.xml tests
+
+
+.PHONY: clean
+clean:
+	git clean -df

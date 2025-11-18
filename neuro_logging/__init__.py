@@ -17,29 +17,31 @@ from .trace import (
     trace_cm,
 )
 
+
 __version__ = version(__package__)
 
 __all__ = [
-    "init_logging",
     "AllowLessThanFilter",
+    "init_logging",
+    "new_sampled_trace",
+    "new_trace",
+    "new_trace_cm",
     "notrace",
     "setup_sentry",
     "trace",
     "trace_cm",
-    "new_sampled_trace",
-    "new_trace",
-    "new_trace_cm",
 ]
 
 
 class AllowLessThanFilter(logging.Filter):
-    def __init__(self, level: t.Union[int, str] = logging.ERROR, name: str = ""):
+    def __init__(self, level: int | str = logging.ERROR, name: str = ""):
         super().__init__(name)
         if not isinstance(level, int):
             try:
                 level = logging._nameToLevel[level]
             except KeyError:
-                raise ValueError(f"Unknown level name: {level}")
+                txt = f"Unknown level name: {level}"
+                raise ValueError(txt) from None
         self.level = level
 
     def filter(self, record: logging.LogRecord) -> bool:

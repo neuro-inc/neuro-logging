@@ -82,7 +82,7 @@ def test_allow_less_filter_text_level_names() -> None:
     filter = AllowLessThanFilter("INFO")
     assert filter.level == logging.INFO
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="unknown-level"):
         AllowLessThanFilter("unknown-level")
 
 
@@ -160,7 +160,7 @@ def test_json_logging_with_exc_info(capsys: Any, monkeypatch: Any) -> None:
     monkeypatch.delenv("PYTEST_VERSION")
     init_logging()
     try:
-        1 / 0
+        1 / 0  # noqa: B018
     except ZeroDivisionError:
         logging.debug("%s msg", "arg", exc_info=True)
     captured = capsys.readouterr()
@@ -199,9 +199,6 @@ def test_json_logging_with_stack_info(capsys: Any, monkeypatch: Any) -> None:
     captured = capsys.readouterr()
     assert not captured.err
     msg = json.loads(captured.out)
-    import pprint
-
-    pprint.pprint(msg)
     assert msg == IsPartialDict(
         {
             "args": ["arg"],
