@@ -5,7 +5,7 @@ import logging
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Mapping
 from contextlib import asynccontextmanager
 from importlib.metadata import version
-from typing import Any, Optional, TypeVar, Union, cast
+from typing import Any, cast
 
 import aiohttp
 import sentry_sdk
@@ -15,10 +15,8 @@ from yarl import URL
 
 from .config import EnvironConfigFactory
 
+
 LOGGER = logging.getLogger(__name__)
-
-
-T = TypeVar("T", bound=Callable[..., Awaitable[Any]])
 
 
 @asynccontextmanager
@@ -48,9 +46,9 @@ async def new_trace_cm(name: str, sampled: bool = False) -> AsyncIterator[None]:
 @asynccontextmanager
 async def sentry_trace_cm(
     name: str,
-    tags: Optional[Mapping[str, str]] = None,
-    data: Optional[Mapping[str, Any]] = None,
-) -> AsyncIterator[Optional[sentry_sdk.tracing.Span]]:
+    tags: Mapping[str, str] | None = None,
+    data: Mapping[str, Any] | None = None,
+) -> AsyncIterator[sentry_sdk.tracing.Span | None]:
     with sentry_sdk.start_span(op="call", name=name) as child:
         if tags:
             for key, value in tags.items():
@@ -71,14 +69,14 @@ async def sentry_trace_cm(
 @asynccontextmanager
 async def trace_cm(
     name: str,
-    tags: Optional[Mapping[str, str]] = None,
-    data: Optional[Mapping[str, str]] = None,
+    tags: Mapping[str, str] | None = None,
+    data: Mapping[str, str] | None = None,
 ) -> AsyncIterator[None]:
     async with sentry_trace_cm(name, tags=tags, data=data):
         yield
 
 
-def trace(func: T) -> T:
+def trace[T: Callable[..., Awaitable[Any]]](func: T) -> T:
     async def _tracer(*args: Any, **kwargs: Any) -> Any:
         name = func.__qualname__
         async with trace_cm(name):
@@ -92,7 +90,7 @@ def trace(func: T) -> T:
     return cast(T, tracer)
 
 
-def new_trace(func: T) -> T:
+def new_trace[T: Callable[..., Awaitable[Any]]](func: T) -> T:
     async def _tracer(*args: Any, **kwargs: Any) -> Any:
         name = func.__qualname__
         async with new_trace_cm(name):
@@ -106,7 +104,7 @@ def new_trace(func: T) -> T:
     return cast(T, tracer)
 
 
-def new_sampled_trace(func: T) -> T:
+def new_sampled_trace[T: Callable[..., Awaitable[Any]]](func: T) -> T:
     async def _tracer(*args: Any, **kwargs: Any) -> Any:
         name = func.__qualname__
         async with new_trace_cm(name, sampled=True):
@@ -120,7 +118,7 @@ def new_sampled_trace(func: T) -> T:
     return cast(T, tracer)
 
 
-def notrace(func: T) -> T:
+def notrace[T: Callable[..., Awaitable[Any]]](func: T) -> T:
     @functools.wraps(func)
     async def tracer(*args: Any, **kwargs: Any) -> Any:
         with sentry_sdk.new_scope() as scope:
@@ -134,7 +132,7 @@ def notrace(func: T) -> T:
 
 def before_send_transaction(
     event: Event, hint: Hint, *, health_check_url_path: str
-) -> Optional[Event]:
+) -> Event | None:
     url = URL(event["request"]["url"])  # type: ignore[arg-type]
 
     if url.path == health_check_url_path:
@@ -158,7 +156,7 @@ def _find_caller_version(stacklevel: int) -> str:
 def setup_sentry(
     *,
     health_check_url_path: str = "/api/v1/ping",
-    ignore_errors: Iterable[Union[type[BaseException], str]] = (),
+    ignore_errors: Iterable[type[BaseException] | str] = (),
 ) -> None:  # pragma: no cover
     config = EnvironConfigFactory().create_sentry()
     if config.dsn:

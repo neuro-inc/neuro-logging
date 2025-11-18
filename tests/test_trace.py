@@ -17,7 +17,7 @@ from neuro_logging.trace import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def sentry_transaction() -> t.Iterator[None]:
     sentry_sdk.init(traces_sample_rate=1.0)
     with sentry_sdk.start_transaction(
@@ -47,7 +47,6 @@ async def test_sentry_trace_cm_data() -> None:
     async with trace_cm(
         "test", tags={"test1": "val1", "test2": "val2"}, data={"data": "value"}
     ):
-
         span = sentry_sdk.get_current_scope().span
 
         assert span
@@ -91,7 +90,7 @@ async def test_sentry_new_trace() -> None:
 
 async def test_sentry_new_trace_multiple_tasks() -> None:
     sentry_sdk.init(traces_sample_rate=1.0)
-    spans: list[t.Optional[Span]] = []
+    spans: list[Span | None] = []
 
     @new_trace
     async def func() -> None:

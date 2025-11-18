@@ -20,3 +20,5 @@ __pycache__
 .python-version
 build
 dist
+
+uv.lock
