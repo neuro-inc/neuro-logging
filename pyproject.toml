@@ -10,7 +10,7 @@ dependencies = [
     "aiohttp[speedups]>=3.11.3",
     "orjson>=3.10.12",
     "python-json-logger>=3.2.1",
-    "sentry-sdk>=2.19.2,<2.45",
+    "sentry-sdk>=2.19.2,<2.46",
 ]
 dynamic = ["version"]
 license = "Apache-2.0"
