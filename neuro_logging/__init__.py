@@ -67,6 +67,7 @@ BASE_CONFIG = {
         "json": {
             "()": OrjsonFormatter,
             "reserved_attrs": [
+                "args",
                 "created",
                 "exc_text",
                 "levelno",
