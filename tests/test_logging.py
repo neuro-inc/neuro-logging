@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import logging
 import os
@@ -6,7 +7,7 @@ from typing import Any
 from unittest import mock
 
 import pytest
-from dirty_equals import IsList, IsNow, IsPartialDict, IsPositiveInt, IsStr
+from dirty_equals import IsNow, IsPartialDict, IsPositiveInt, IsStr
 
 from neuro_logging import AllowLessThanFilter, init_logging
 
@@ -106,8 +107,6 @@ def test_json_logging_with_extra(capsys: Any, monkeypatch: Any) -> None:
     msg = json.loads(captured.out)
     assert msg == IsPartialDict(
         {
-            "args": [],
-            "exc_info": None,
             "filename": "test_logging.py",
             "funcName": "test_json_logging_with_extra",
             "key": "first",
@@ -136,8 +135,6 @@ def test_json_logging_with_args(capsys: Any, monkeypatch: Any) -> None:
     msg = json.loads(captured.out)
     assert msg == IsPartialDict(
         {
-            "args": ["arg"],
-            "exc_info": None,
             "filename": "test_logging.py",
             "funcName": "test_json_logging_with_args",
             "lineno": IsPositiveInt(),
@@ -168,12 +165,7 @@ def test_json_logging_with_exc_info(capsys: Any, monkeypatch: Any) -> None:
     msg = json.loads(captured.out)
     assert msg == IsPartialDict(
         {
-            "args": ["arg"],
-            "exc_info": IsList(
-                "ZeroDivisionError",
-                "ZeroDivisionError: division by zero",
-                length=3,
-            ),
+            "exc_info": IsStr(regex=r"(?s)Traceback.*ZeroDivisionError.*"),
             "filename": "test_logging.py",
             "funcName": "test_json_logging_with_exc_info",
             "lineno": IsPositiveInt(),
@@ -201,8 +193,6 @@ def test_json_logging_with_stack_info(capsys: Any, monkeypatch: Any) -> None:
     msg = json.loads(captured.out)
     assert msg == IsPartialDict(
         {
-            "args": ["arg"],
-            "exc_info": None,
             "filename": "test_logging.py",
             "funcName": "test_json_logging_with_stack_info",
             "lineno": IsPositiveInt(),
@@ -220,3 +210,51 @@ def test_json_logging_with_stack_info(capsys: Any, monkeypatch: Any) -> None:
         }
     )
     assert msg["stack_info"].startswith("Stack (most recent call last):\n")
+
+
+def test_json_logging_omits_args(capsys: Any, monkeypatch: Any) -> None:
+    monkeypatch.delenv("PYTEST_VERSION")
+    init_logging()
+    logging.debug("%s msg", "arg")
+    captured = capsys.readouterr()
+    msg = json.loads(captured.out)
+    assert "args" not in msg
+    assert msg["message"] == "arg msg"
+
+
+def test_json_logging_does_not_serialize_argument_objects(
+    capsys: Any, monkeypatch: Any
+) -> None:
+    monkeypatch.delenv("PYTEST_VERSION")
+
+    @dataclasses.dataclass(frozen=True)
+    class Config:
+        token: str = dataclasses.field(repr=False)
+
+    init_logging()
+    logging.debug("Loaded config: %r", Config(token="s3cr3t-sentinel-value"))
+    captured = capsys.readouterr()
+    assert "s3cr3t-sentinel-value" not in captured.out
+    msg = json.loads(captured.out)
+    assert msg["message"].endswith("Config()")
+
+
+def test_json_logging_does_not_serialize_exception_objects(
+    capsys: Any, monkeypatch: Any
+) -> None:
+    monkeypatch.delenv("PYTEST_VERSION")
+
+    @dataclasses.dataclass
+    class ConfigError(Exception):
+        token: str = dataclasses.field(repr=False, default="s3cr3t-sentinel-value")
+
+    init_logging()
+    try:
+        raise ConfigError()
+    except ConfigError:
+        logging.debug("boom", exc_info=True)
+    captured = capsys.readouterr()
+    assert "s3cr3t-sentinel-value" not in captured.out
+    msg = json.loads(captured.out)
+    assert msg["message"] == "boom"
+    assert "Traceback" in msg["exc_info"]
