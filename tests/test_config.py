@@ -43,3 +43,12 @@ class TestEnvironConfigFactory:
         assert config.cluster_name == "cluster"
         assert config.app_name == "app"
         assert config.sample_rate == 0.5
+
+
+def test_sentry_dsn_is_not_in_repr() -> None:
+    config = EnvironConfigFactory(
+        {"SENTRY_DSN": "https://s3cr3t-sentinel-value@o44.ingest.sentry.io/1234"}
+    ).create_sentry()
+
+    assert "s3cr3t-sentinel-value" not in repr(config)
+    assert config.dsn == "https://s3cr3t-sentinel-value@o44.ingest.sentry.io/1234"

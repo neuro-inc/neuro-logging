@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 
 @dataclass(frozen=True)
@@ -13,7 +13,7 @@ class LoggingConfig:
 
 @dataclass(frozen=True)
 class SentryConfig:
-    dsn: str | None = None
+    dsn: str | None = field(repr=False, default=None)
     cluster_name: str | None = None
     app_name: str | None = None
     sample_rate: float = 0.1
